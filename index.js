@@ -820,6 +820,8 @@ game={
 	
 	async activate() {		
 		
+		
+		objects.load_notice.visible=true;
 		const song_id=songs_data[play_menu.cur_song_id].file_name;
 		const midi = await Midi.fromUrl(git_src+'/new_midi/'+song_id+'.mid');
 		
@@ -898,7 +900,9 @@ game={
 			
 		}
 
+		
 		await new Promise(resolve=>this.notes_loader.load(resolve));
+		objects.load_notice.visible=false;
 		
 		anim2.add(objects.piano_keys_cont,{y:[600, 0]}, true, 0.5,'easeOutCubic');
 		objects.falling_notes_cont.visible=true;
@@ -1685,8 +1689,11 @@ play_menu={
 			if (!avatar_loader.resources[songs_data[i].artist_eng])
 				avatar_loader.add(songs_data[i].artist_eng,'artists/'+songs_data[i].artist_eng+'.jpg');					
 
+		objects.load_notice.visible=true;
 		await new Promise(resolve=> avatar_loader.load(resolve))
-			
+		
+		
+		
 		if (this.cur_song_id>0){			
 			for (let i=0;i<cards_num;i++){
 				objects.songs_cards[i].y=310-i*70+70;
@@ -1699,6 +1706,7 @@ play_menu={
 				await objects.songs_cards[i].set(i+this.cur_song_id);
 			}	
 		}
+		objects.load_notice.visible=false;
 		
 		objects.songs_cards_cont.y=0;				
 		await anim2.add(objects.songs_cards_cont,{alpha:[0, 1]}, true, 1,'linear',false);
