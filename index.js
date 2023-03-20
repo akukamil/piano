@@ -914,12 +914,15 @@ game={
 	},
 	
 	restart(){
+		if(anim2.any_on())return;
+		sound.play('click');
+		
 		objects.msg_cont.visible=false;
 		game.activate();		
 	},
 	
 	exit_down(){
-		
+		if(anim2.any_on())return;
 		sound.play('click');
 		objects.msg_cont.visible=false;
 		this.close();
@@ -1025,8 +1028,9 @@ game={
 	},
 	
 	stop(){
-		this.on=false;
 		
+		this.on=false;
+		sound.play('crowd_whoo');
 		anim2.add(objects.msg_cont,{y:[-200, objects.msg_cont.sy]},true,0.4,'easeOutBack');
 		some_process.game=function(){};
 	},
@@ -1551,7 +1555,8 @@ async function load_resources() {
 	
 	document.getElementById("m_progress").style.display = 'flex';
 
-	git_src=""
+	git_src="https://akukamil.github.io/piano/"
+	//git_src=""
 
 	//подпапка с ресурсами
 	let lang_pack = ['RUS','ENG'][0];
@@ -1568,8 +1573,13 @@ async function load_resources() {
 	game_res.add('close',git_src+'sounds/close.mp3');
 	game_res.add('click',git_src+'sounds/click.mp3');
 	game_res.add('locked',git_src+'sounds/locked.mp3');
+	game_res.add('locked2',git_src+'sounds/locked2.mp3');
 	game_res.add('applause',git_src+'sounds/applause.mp3');
 	game_res.add('up',git_src+'sounds/up.mp3');
+	game_res.add('arrow_end',git_src+'sounds/arrow_end.mp3');
+	game_res.add('start',git_src+'sounds/start.mp3');
+	game_res.add('note1',git_src+'sounds/note1.mp3');
+	game_res.add('crowd_whoo',git_src+'sounds/crowd_whoo.mp3');	
 	
 	game_res.onProgress.add(progress);
 	function progress(loader, resource) {
@@ -1608,6 +1618,7 @@ main_menu={
 	
 	activate(){
 		
+		sound.play('start');
 		anim2.add(objects.game_title,{y:[-100, objects.game_title.sy]}, true, 1,'linear',false);
 		anim2.add(objects.play_button,{x:[-300, objects.play_button.sx]}, true, 1,'linear',false);
 		anim2.add(objects.lb_button,{x:[900, objects.lb_button.sx]}, true, 1,'linear',false);
@@ -1617,6 +1628,7 @@ main_menu={
 	
 	play_button_down(){
 		if(anim2.any_on())return;
+		sound.play('click');
 		this.close();
 		play_menu.activate();
 		
@@ -1676,22 +1688,28 @@ play_menu={
 		//определяем первую и последнюю карточки
 		this.recalc_top_bottom_cards();
 		objects.arrow_icon.y=345;		
+		sound.play('arrow_end');
 		await anim2.add(objects.arrow_icon,{x:[-200, 150]}, true, 1,'easeOutBounce');
 		
 		if(result==='win')
 			await this.shift_up();
 		
-		objects.up_button.visible=true;
-		objects.down_button.visible=true;
-		objects.back_button.visible=true;
 		
-		anim2.add(objects.start_button,{x:[900, objects.start_button.sx]}, true, 0.5,'easeOutBack');
+		sound.play('note1');
+		anim2.add(objects.up_button,{y:[-100, objects.up_button.sy]}, true, 0.5,'easeOutCubic');
+		anim2.add(objects.down_button,{x:[900, objects.down_button.sx]}, true, 0.5,'easeOutCubic');
+		anim2.add(objects.back_button,{x:[-100, objects.back_button.sx]}, true, 0.5,'easeOutCubic');
+		anim2.add(objects.start_button,{x:[900, objects.start_button.sx]}, true, 0.5,'easeOutCubic');
 		
 	},
 	
 	start_down(){
 		
-		if(anim2.any_on())return;
+		if(anim2.any_on()){
+			sound.play('locked2');
+			return;				
+		}
+
 		sound.play('click');
 		this.close();
 		game.activate();
@@ -1700,14 +1718,12 @@ play_menu={
 		
 	up_down(){			
 
-		if(!objects.songs_cards_cont.ready)
-			return;
-						
-		if(this.cur_song_id===songs_data.length-1)
-			return;	
-				
-		if(my_data.rating<this.cur_song_id+1)
-			return;			
+		if(!objects.songs_cards_cont.ready||this.cur_song_id===songs_data.length-1||my_data.rating<this.cur_song_id+1){
+		sound.play('locked2');
+			return;				
+		}
+
+		
 				
 		sound.play('click');
 				
@@ -1728,11 +1744,12 @@ play_menu={
 	
 	down_down(){	
 		
-		if(!objects.songs_cards_cont.ready)
-			return;
 
-		if(this.cur_song_id===0)
-			return;	
+		if(this.cur_song_id===0||!objects.songs_cards_cont.ready){
+			sound.play('locked2');
+			return;				
+		}
+
 		
 		sound.play('click');
 		
@@ -1763,7 +1780,11 @@ play_menu={
 	},
 	
 	back_button_down(){
-		if(anim2.any_on())return;
+		if(anim2.any_on()){
+			sound.play('locked2');
+			return;				
+		}
+
 		sound.play('click');
 		this.close();
 		main_menu.activate();
