@@ -180,7 +180,7 @@ anim2 = {
 		
 	},	
 	
-	add : function(obj, params, vis_on_end, time, func, anim3_origin,block) {
+	add : function(obj,params,vis_on_end,time,func,block) {
 				
 		//если уже идет анимация данного спрайта то отменяем ее
 		anim2.kill_anim(obj);
@@ -209,7 +209,7 @@ anim2 = {
 					
 				this.slot[i] = {
 					obj: obj,
-					block:block||true,
+					block:block===undefined,
 					params: params,
 					vis_on_end: vis_on_end,
 					func: this[func].bind(anim2),
@@ -1002,7 +1002,7 @@ game={
 			const snote=objects.falling_notes[+min_note_ind];
 			snote.texture=gres.falling_note_ok_img.texture;
 			
-			anim2.add(snote,{scale_xy:[snote.scale_xy, snote.scale_xy*2],alpha:[1,0]},false,2,'linear');
+			anim2.add(snote,{scale_xy:[snote.scale_xy, snote.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
 		}else{
 			sound.play('locked');
 		}
@@ -1106,7 +1106,7 @@ game={
 				} else {
 					game.decrease_life();
 					sprite_note.texture=gres.falling_note_no_img.texture;	
-					anim2.add(sprite_note,{scale_xy:[sprite_note.scale_xy, sprite_note.scale_xy*2],alpha:[1,0]},false,2,'linear');
+					anim2.add(sprite_note,{scale_xy:[sprite_note.scale_xy, sprite_note.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
 				}
 				note.finished=true;
 			}
@@ -1635,10 +1635,10 @@ main_menu={
 	activate(){
 		
 		sound.play('start');
-		anim2.add(objects.game_title,{y:[-100, objects.game_title.sy]}, true, 1,'linear',false);
-		anim2.add(objects.play_button,{x:[-300, objects.play_button.sx]}, true, 1,'linear',false);
-		anim2.add(objects.lb_button,{x:[900, objects.lb_button.sx]}, true, 1,'linear',false);
-		anim2.add(objects.rules_button,{y:[500, objects.rules_button.sy]}, true, 1,'linear',false);
+		anim2.add(objects.game_title,{y:[-100, objects.game_title.sy],alpha:[0,1]}, true, 1,'linear',false);
+		anim2.add(objects.play_button,{x:[-300, objects.play_button.sx],alpha:[0,1]}, true, 1,'linear',false);
+		anim2.add(objects.lb_button,{x:[900, objects.lb_button.sx],alpha:[0,1]}, true, 1,'linear',false);
+		anim2.add(objects.rules_button,{y:[500, objects.rules_button.sy],alpha:[0,1]}, true, 1,'linear',false);
 		
 	},
 	
