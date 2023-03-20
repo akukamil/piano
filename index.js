@@ -1672,7 +1672,7 @@ play_menu={
 	async activate(result){
 		
 		//время рекламы
-		ad.check_and_show();
+		await ad.check_and_show();
 
 		
 		if(!avatar_loader)
