@@ -101,6 +101,10 @@ anim2 = {
 		return false;		
 	},
 	
+	wait(seconds){		
+		return this.add(this.empty_spr,{x:[0,1]}, false, seconds,'linear');		
+	},
+	
 	linear: function(x) {
 		return x
 	},
@@ -917,6 +921,9 @@ game={
 		if(anim2.any_on())return;
 		sound.play('click');
 		
+		//время рекламы
+		ad.check_and_show();
+		
 		objects.msg_cont.visible=false;
 		game.activate();		
 	},
@@ -1129,14 +1136,23 @@ keep_alive= function() {
 
 ad = {
 	
-	prv_show : -9999,
-	
-	show : function() {
+	prv_show : Date.now(),
+		
+	async check_and_show(){
 		
 		if ((Date.now() - this.prv_show) < 90000 )
 			return false;
-		this.prv_show = Date.now();		
+		this.prv_show = Date.now();	
 		
+		this.show();
+		objects.ad_break.visible=true;
+		await anim2.wait(3);
+		objects.ad_break.visible=false;		
+		
+	},
+	
+	show() {
+				
 		if (game_platform==="YANDEX") {			
 			//показываем рекламу
 			window.ysdk.adv.showFullscreenAdv({
@@ -1556,7 +1572,7 @@ async function load_resources() {
 	document.getElementById("m_progress").style.display = 'flex';
 
 	git_src="https://akukamil.github.io/piano/"
-	//git_src=""
+	git_src=""
 
 	//подпапка с ресурсами
 	let lang_pack = ['RUS','ENG'][0];
@@ -1655,6 +1671,10 @@ play_menu={
 	
 	async activate(result){
 		
+		//время рекламы
+		ad.check_and_show();
+
+		
 		if(!avatar_loader)
 			avatar_loader=new PIXI.Loader();
 				
@@ -1666,8 +1686,7 @@ play_menu={
 				avatar_loader.add(songs_data[i].artist_eng,'artists/'+songs_data[i].artist_eng+'.jpg');					
 
 		await new Promise(resolve=> avatar_loader.load(resolve))
-		
-	
+			
 		if (this.cur_song_id>0){			
 			for (let i=0;i<cards_num;i++){
 				objects.songs_cards[i].y=310-i*70+70;
@@ -1683,7 +1702,6 @@ play_menu={
 		
 		objects.songs_cards_cont.y=0;				
 		await anim2.add(objects.songs_cards_cont,{alpha:[0, 1]}, true, 1,'linear',false);
-
 		
 		//определяем первую и последнюю карточки
 		this.recalc_top_bottom_cards();
@@ -1692,8 +1710,7 @@ play_menu={
 		await anim2.add(objects.arrow_icon,{x:[-200, 150]}, true, 1,'easeOutBounce');
 		
 		if(result==='win')
-			await this.shift_up();
-		
+			await this.shift_up();		
 		
 		sound.play('note1');
 		anim2.add(objects.up_button,{y:[-100, objects.up_button.sy]}, true, 0.5,'easeOutCubic');
