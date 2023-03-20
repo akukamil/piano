@@ -902,8 +902,11 @@ game={
 		anim2.add(objects.taps_left,{y:[-200, objects.taps_left.sy]}, true, 0.5,'easeOutCubic');
 		anim2.add(objects.close_button,{y:[-200, objects.close_button.sy]}, true, 0.5,'easeOutCubic');
 		
-		if(my_data.rating===0)
-			await this.wait_instructions();
+		if(my_data.rating===0){
+			await this.wait_instructions();			
+			sound.play('click');
+		}
+
 		
 		this.play_start=game_tick+3;
 		this.on=true;
@@ -1613,7 +1616,7 @@ main_menu={
 	},
 	
 	play_button_down(){
-		
+		if(anim2.any_on())return;
 		this.close();
 		play_menu.activate();
 		
@@ -1724,7 +1727,7 @@ play_menu={
 	},
 	
 	down_down(){	
-
+		
 		if(!objects.songs_cards_cont.ready)
 			return;
 
@@ -1760,7 +1763,8 @@ play_menu={
 	},
 	
 	back_button_down(){
-		
+		if(anim2.any_on())return;
+		sound.play('click');
 		this.close();
 		main_menu.activate();
 		
