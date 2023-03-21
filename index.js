@@ -1,11 +1,7 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app ={stage:{},renderer:{}}, game_res, game, objects={}, state="",my_role="", game_tick=0,audio_context, my_turn=false, room_name = '', move=0, game_id=0, connected = 1, LANG = 0,git_src;
-var any_dialog_active=0, some_process = {}, h_state=0, game_platform="", hidden_state_start = 0;
-var WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2,no_invite=false;
-var pending_player="", opponent=null;
+var app ={stage:{},renderer:{}}, game_res, objects={}, game_tick=0,audio_context, my_turn=false, room_name = '', LANG = 0, git_src;
+var any_dialog_active=0, some_process = {}, game_platform='';
 var my_data={opp_id : ''},opp_data={};
-var g_process=function(){};
-var instruments_names = ['acoustic_grand_piano','acoustic_guitar_nylon','acoustic_guitar_steel','electric_guitar_jazz','electric_piano_2','pad_1_new_age','koto','fx_1_rain','fx_3_crystal','fx_4_atmosphere','synth_brass_1','harpsichord','vibraphone'];
 var avatar_loader;
 var speed=0.95;
 
@@ -82,7 +78,7 @@ irnd = function (min,max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-anim2 = {
+anim2={
 		
 	c1: 1.70158,
 	c2: 1.70158 * 1.525,
@@ -279,7 +275,7 @@ anim2 = {
 	
 }
 
-sound = {
+sound={
 	
 	on : 1,
 	
@@ -302,7 +298,7 @@ sound = {
 	
 }
 
-message =  {
+message={
 	
 	promise_resolve :0,
 	
@@ -353,7 +349,7 @@ message =  {
 
 }
 
-big_message = {
+big_message={
 	
 	p_resolve : 0,
 		
@@ -778,7 +774,7 @@ board_func={
 	}
 }
 
-make_text = function (obj, text, max_width) {
+make_text=function (obj, text, max_width) {
 
 	let sum_v=0;
 	let f_size=obj.fontSize;
@@ -819,8 +815,7 @@ game={
 	instructions_resolver:null,
 	
 	async activate() {		
-		
-		
+				
 		objects.load_notice.visible=true;
 		const song_id=songs_data[play_menu.cur_song_id].file_name;
 		const midi = await Midi.fromUrl(git_src+'/new_midi/'+song_id+'.mid');
@@ -832,7 +827,6 @@ game={
 		this.life=5;
 		objects.hearts.forEach(t=>t.texture=gres.heart_img.texture);
 		anim2.add(objects.hearts_cont,{y:[-60, objects.hearts_cont.sy]},true,0.4,'linear');
-
 		
 		//определяем уникальные ноты чтобы только их загрузить (они загрузятся в объект по возрастанию)
 		this.main_notes=midi.tracks.filter(t => t.name==='MAIN')[0].notes;
@@ -1132,13 +1126,13 @@ game={
 
 }
 
-keep_alive= function() {
+keep_alive=function() {
 	
 	firebase.database().ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
 
 }
 
-ad = {
+ad={
 	
 	prv_show : Date.now(),
 		
@@ -1671,13 +1665,14 @@ play_menu={
 	song_to_play:0,
 	top_card:null,
 	bottom_card:null,
-	cur_song_id:0,
+	cur_song_id:3,
 	
 	async activate(result){
 		
 		//время рекламы
 		await ad.check_and_show();
-
+		
+		//this.cur_song_id=my_data.rating;
 		
 		if(!avatar_loader)
 			avatar_loader=new PIXI.Loader();
@@ -1690,29 +1685,24 @@ play_menu={
 				avatar_loader.add(songs_data[i].artist_eng,'artists/'+songs_data[i].artist_eng+'.jpg');					
 
 		objects.load_notice.visible=true;
-		await new Promise(resolve=> avatar_loader.load(resolve))
-		
-		
-		
-		if (this.cur_song_id>0){			
-			for (let i=0;i<cards_num;i++){
-				objects.songs_cards[i].y=310-i*70+70;
-				await objects.songs_cards[i].set(i+this.cur_song_id-1);
+		await new Promise(resolve=> avatar_loader.load(resolve))					
+		for (let i=0;i<cards_num;i++){			
+			const song_id_to_add=this.cur_song_id-1+i;
+			if(song_id_to_add>-1){
+				objects.songs_cards[i].y=380-i*70;
+				await objects.songs_cards[i].set(song_id_to_add);					
 			}			
-		}else{
-			
-			for (let i=0;i<cards_num;i++){
-				objects.songs_cards[i].y=310-i*70;
-				await objects.songs_cards[i].set(i+this.cur_song_id);
-			}	
-		}
-		objects.load_notice.visible=false;
-		
-		objects.songs_cards_cont.y=0;				
-		await anim2.add(objects.songs_cards_cont,{alpha:[0, 1]}, true, 1,'linear',false);
+		}	
 		
 		//определяем первую и последнюю карточки
 		this.recalc_top_bottom_cards();
+		
+		objects.load_notice.visible=false;		
+				
+		objects.songs_cards_cont.y=0;				
+		await anim2.add(objects.songs_cards_cont,{alpha:[0, 1]}, true, 1,'linear',false);
+		
+
 		objects.arrow_icon.y=345;		
 		sound.play('arrow_end');
 		await anim2.add(objects.arrow_icon,{x:[-200, 150]}, true, 1,'easeOutBounce');
@@ -1747,8 +1737,6 @@ play_menu={
 		sound.play('locked2');
 			return;				
 		}
-
-		
 				
 		sound.play('click');
 				
@@ -1820,12 +1808,14 @@ play_menu={
 		
 		if(my_data.rating===this.cur_song_id){
 			
-			my_data.rating=this.cur_song_id+1;			
+			my_data.rating=this.cur_song_id+1;	
+			firebase.database().ref('players/'+my_data.uid+'/rating').set(my_data.rating);
+			sound.play('up');
+			this.up_down();			
 		}
 
 		
-		sound.play('up');
-		this.up_down();
+
 		
 	},
 	
@@ -2003,9 +1993,9 @@ async function init_game_env(lang) {
 	const _other_data = await firebase.database().ref("players/"+my_data.uid).once('value');
 	const other_data = _other_data.val();
 	
-	//делаем защиту от неопределенности
+	//определяем рейтинг
 	my_data.rating = (other_data && other_data.rating) || 0;
-
+	play_menu.cur_song_id=my_data.rating;
 
 	//убираем лупу
 	objects.id_loup.visible=false;
