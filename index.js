@@ -112,7 +112,6 @@ class lb_player_card_class extends PIXI.Container{
 
 }
 
-
 irnd = function (min,max) {	
     min = Math.ceil(min);
     max = Math.floor(max);
@@ -1056,12 +1055,13 @@ game={
 		
 	},
 	
-	wait_instructions(){
+	async wait_instructions(){
 		
-		return new Promise(resolver=>{
-			objects.instructions.visible=true;
+		objects.instructions.visible=true;
+		await new Promise(resolver=>{			
 			objects.instructions.resolver=resolver;
 		})
+		objects.instructions.visible=false;
 		
 	},
 	
@@ -1666,12 +1666,8 @@ main_menu={
 	},
 	
 	async rules_button_down(){
-		
-		objects.instructions.visible=true;
-		await new Promise(resolver=>{			
-			objects.instructions.resolver=resolver;
-		})
-		objects.instructions.visible=false;
+		if(anim2.any_on())return;
+		await game.wait_instructions();
 		
 	},
 	
