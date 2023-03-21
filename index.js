@@ -72,6 +72,47 @@ class song_card_class extends PIXI.Container{
 	
 }
 
+class lb_player_card_class extends PIXI.Container{
+
+	constructor(x,y,place) {
+		super();
+
+		this.bcg=new PIXI.Sprite(game_res.resources.lb_player_card_bcg.texture);
+		this.bcg.interactive=true;
+		this.bcg.pointerover=function(){this.tint=0x55ffff};
+		this.bcg.pointerout=function(){this.tint=0xffffff};
+		this.bcg.width = 370;
+		this.bcg.height = 70;
+
+		this.place=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
+		this.place.tint=0xffff00;
+		this.place.x=20;
+		this.place.y=22;
+
+		this.avatar=new PIXI.Sprite();
+		this.avatar.x=43;
+		this.avatar.y=10;
+		this.avatar.width=this.avatar.height=48;
+
+
+		this.name=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
+		this.name.tint=0xdddddd;
+		this.name.x=105;
+		this.name.y=22;
+
+
+		this.rating=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
+		this.rating.x=298;
+		this.rating.tint=0xff55ff;
+		this.rating.y=22;
+
+		this.addChild(this.bcg,this.place, this.avatar, this.name, this.rating);
+	}
+
+
+}
+
+
 irnd = function (min,max) {	
     min = Math.ceil(min);
     max = Math.floor(max);
@@ -812,7 +853,6 @@ game={
 	on:false,
 	notes_in_song:0,
 	touches_cnt:0,
-	instructions_resolver:null,
 	
 	async activate() {		
 				
@@ -1020,14 +1060,14 @@ game={
 		
 		return new Promise(resolver=>{
 			objects.instructions.visible=true;
-			game.instructions_resolver=resolver;
+			objects.instructions.resolver=resolver;
 		})
 		
 	},
 	
 	instructions_down(){
 		
-		game.instructions_resolver();
+		objects.instructions.resolver();
 		objects.instructions.visible=false;
 		
 	},
@@ -1226,8 +1266,7 @@ lb={
 
 	show: function() {
 
-		objects.desktop.visible=true;
-		objects.desktop.texture=game_res.resources.lb_bcg.texture;
+		objects.bcg.texture=game_res.resources.lb_bcg.texture;
 
 		anim2.add(objects.lb_1_cont,{x:[-150,objects.lb_1_cont.sx]},true,0.4,'easeOutBack');
 		anim2.add(objects.lb_2_cont,{x:[-150,objects.lb_2_cont.sx]},true,0.45,'easeOutBack');
@@ -1253,7 +1292,7 @@ lb={
 
 	close: function() {
 
-
+		objects.bcg.texture=game_res.resources.bcg.texture;
 		objects.lb_1_cont.visible=false;
 		objects.lb_2_cont.visible=false;
 		objects.lb_3_cont.visible=false;
@@ -1538,30 +1577,8 @@ resize=function() {
     app.stage.scale.set(nvw / M_WIDTH, nvh / M_HEIGHT);
 }
 
-set_state=function(params) {
-
-	if (params.state!==undefined)
-		state=params.state;
-
-	if (params.hidden!==undefined)
-		h_state=+params.hidden;
-
-	let small_opp_id="";
-	if (opp_data.uid!==undefined)
-		small_opp_id=opp_data.uid.substring(0,10);
-
-	if(no_invite===false || state==='p')
-		firebase.database().ref(room_name + "/" + my_data.uid).set({state:state, name:my_data.name, rating : my_data.rating, hidden:h_state, opp_id : small_opp_id});
-
-}
-
 vis_change=function() {
 
-	if (document.hidden === true)
-		hidden_state_start = Date.now();
-	
-	set_state({hidden : document.hidden});
-	
 		
 }
 
@@ -1648,6 +1665,25 @@ main_menu={
 		
 	},
 	
+	async rules_button_down(){
+		
+		objects.instructions.visible=true;
+		await new Promise(resolver=>{			
+			objects.instructions.resolver=resolver;
+		})
+		objects.instructions.visible=false;
+		
+	},
+	
+	lb_down(){
+		
+		if(anim2.any_on())return;
+		this.close();
+		lb.show();
+		
+		
+	},
+		
 	close(){
 		
 		anim2.add(objects.game_title,{y:[objects.game_title.sy,-100]}, false, 1,'linear',false);
