@@ -18,6 +18,7 @@ class song_card_class extends PIXI.Container{
 		this.avatar_bcg.height=70;	
 				
 		this.avatar=new PIXI.Sprite();
+		this.avatar.x=30;
 		this.avatar.width=70;
 		this.avatar.height=70;
 		
@@ -26,14 +27,20 @@ class song_card_class extends PIXI.Container{
 		this.avatar_frame.height=70;
 				
 		this.artist_name=new PIXI.BitmapText('123', {fontName: 'mfont',fontSize: 30}); 
-		this.artist_name.x=80;
+		this.artist_name.x=120;
 		this.artist_name.y=10;
 		this.artist_name.tint=0x110022;
 		
 		this.song_name=new PIXI.BitmapText('123', {fontName: 'mfont',fontSize: 25}); 
-		this.song_name.x=80;
+		this.song_name.x=120;
 		this.song_name.y=40;
 		this.song_name.tint=0x0000ff;
+		
+		this.card_num=new PIXI.BitmapText('1', {fontName: 'mfont',fontSize: 35}); 
+		this.card_num.x=10;
+		this.card_num.y=35;
+		this.card_num.anchor.set(0.5,0.5);
+		this.card_num.tint=0x333333;
 		
 		this.bottom_line=new PIXI.Sprite(gres.bottom_line.texture);
 		this.bottom_line.y=70;
@@ -48,7 +55,7 @@ class song_card_class extends PIXI.Container{
 		
 		
 		this.visible=false;
-		this.addChild(this.avatar_bcg,this.avatar,this.avatar_frame,this.artist_name,this.song_name,this.bottom_line,this.lock);
+		this.addChild(this.avatar_bcg,this.avatar,this.avatar_frame,this.artist_name,this.card_num,this.song_name,this.bottom_line,this.lock);
 		
 	}
 	
@@ -60,6 +67,7 @@ class song_card_class extends PIXI.Container{
 		this.song_name.text=songs_data[song_id].song_rus;
 		const avatar_res=songs_data[song_id].artist_eng;
 		this.avatar.texture=PIXI.Texture.WHITE;
+		this.card_num.text=song_id+1;
 		
 		if (!avatar_loader.resources[avatar_res]){			
 			avatar_loader.add(songs_data[song_id].artist_eng,'artists/'+songs_data[song_id].artist_eng+'.jpg',{timeout: 5000});			
@@ -857,6 +865,7 @@ game={
 				
 		objects.load_notice.visible=true;
 		const song_id=songs_data[play_menu.cur_song_id].file_name;
+		speed=songs_data[play_menu.cur_song_id].speed;
 		const midi = await Midi.fromUrl(git_src+'/new_midi/'+song_id+'.mid');
 		
 		let unique_notes={};
@@ -907,6 +916,8 @@ game={
 		for (key in unique_notes)		
 			unique_notes[key] = ind++;
 
+		//определяем время первой ноты
+		const first_note_time=this.main_notes[0].time;
 
 		//начальное расположение падающих нот
 		objects.falling_notes.forEach(f=>f.visible=false)
@@ -915,7 +926,7 @@ game={
 			const note_time = this.main_notes[k].time;			
 			objects.falling_notes[k].time=note_time;
 			objects.falling_notes[k].x=unique_notes[note_midi]*piano_key_width+piano_key_width*0.5;
-			objects.falling_notes[k].y=300-note_time*(50);
+			//objects.falling_notes[k].y=300+first_note_time*50-note_time*(50);
 			objects.falling_notes[k].visible=true;
 			objects.falling_notes[k].width=50;
 			objects.falling_notes[k].height=50;
@@ -943,13 +954,16 @@ game={
 		anim2.add(objects.taps_left,{y:[-200, objects.taps_left.sy]}, true, 0.5,'easeOutCubic');
 		anim2.add(objects.close_button,{y:[-200, objects.close_button.sy]}, true, 0.5,'easeOutCubic');
 		
+		
+		//показываем инструкцию для новичков
 		if(my_data.rating===0){
 			await this.wait_instructions();			
 			sound.play('click');
 		}
 
 		
-		this.play_start=game_tick+3;
+		//3 доп секунды до первой ноты
+		this.play_start=game_tick-first_note_time/speed+3;
 		this.on=true;
 		some_process.game=this.process.bind(game);
 	},
@@ -970,7 +984,7 @@ game={
 		sound.play('click');
 		objects.msg_cont.visible=false;
 		this.close();
-		play_menu.activate();
+		play_menu.activate('win');
 		
 	},
 	
@@ -1120,7 +1134,7 @@ game={
 			const note_time = note.time;
 			const note_midi = note.midi;
 			const dt=note_time-cur_sec;
-			const pos_y=300-dt*(100);			
+			const pos_y=300-dt*100;			
 			if(pos_y>=300 && note.played===false){				
 				sound.play('M'+note_midi,this.notes_loader.resources);					
 				note.played=true;					
@@ -1134,7 +1148,7 @@ game={
 			const note = this.main_notes[k];
 			const note_time = note.time;
 			const dt=note_time-cur_sec;
-			const pos_y=300-dt*(100);
+			const pos_y=300-dt*100;
 			const sprite_note=objects.falling_notes[k];
 			if(dt<-0.25&&!note.finished) {
 				
@@ -1551,7 +1565,7 @@ auth2 = {
 		if (game_platform === 'UNKNOWN') {
 			
 			//если не нашли платформу
-			alert('Неизвестная платформа. Кто Вы?')
+			//alert('Неизвестная платформа. Кто Вы?')
 			my_data.uid = this.search_in_local_storage() || this.get_random_uid_for_local('LS_');
 			my_data.name = this.get_random_name(my_data.uid);
 			my_data.pic_url = 'https://avatars.dicebear.com/api/adventurer/' + my_data.uid + '.svg';	
