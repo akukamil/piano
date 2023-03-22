@@ -984,7 +984,7 @@ game={
 		sound.play('click');
 		objects.msg_cont.visible=false;
 		this.close();
-		play_menu.activate('win');
+		play_menu.activate();
 		
 	},
 	
