@@ -864,16 +864,30 @@ game={
 	async activate() {		
 				
 		objects.load_notice.visible=true;
-		const song_id=songs_data[play_menu.cur_song_id].file_name;
+		const midi_file_id=songs_data[play_menu.cur_song_id].file_name;
 		speed=songs_data[play_menu.cur_song_id].speed;
-		const midi = await Midi.fromUrl(git_src+'/new_midi/'+song_id+'.mid');
+		const midi = await Midi.fromUrl(git_src+'/new_midi/'+midi_file_id+'.mid');
 		
 		let unique_notes={};
 		let all_unique_notes={};
 		
 		//жизни
 		this.life=5;
-		objects.hearts.forEach(t=>t.texture=gres.heart_img.texture);
+		if(play_menu.cur_song_id>5)
+			this.life=4;
+		if(play_menu.cur_song_id>10)
+			this.life=3;
+		if(play_menu.cur_song_id>15)
+			this.life=2;
+		if(play_menu.cur_song_id>20)
+			this.life=1;
+		
+		for (let i=0;i<5;i++){
+			if (i<this.life)
+				objects.hearts[i].texture=gres.heart_img.texture;
+			else
+				objects.hearts[i].texture=gres.no_heart_img.texture;
+		}
 		anim2.add(objects.hearts_cont,{y:[-60, objects.hearts_cont.sy]},true,0.4,'linear');
 		
 		//определяем уникальные ноты чтобы только их загрузить (они загрузятся в объект по возрастанию)
