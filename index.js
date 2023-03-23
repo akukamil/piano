@@ -982,12 +982,12 @@ game={
 		some_process.game=this.process.bind(game);
 	},
 	
-	restart(){
+	async restart(){
 		if(anim2.any_on())return;
 		sound.play('click');
 		
 		//время рекламы
-		ad.check_and_show();
+		await ad.check_and_show();
 		
 		objects.msg_cont.visible=false;
 		game.activate();		
@@ -1208,7 +1208,7 @@ ad={
 		
 		if ((Date.now() - this.prv_show) < 90000 )
 			return false;
-		this.prv_show = Date.now();	
+		this.prv_show = Date.now();
 		
 		this.show();
 		objects.ad_break.visible=true;
