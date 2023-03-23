@@ -937,7 +937,8 @@ game={
 		objects.falling_notes.forEach(f=>f.visible=false)
 		for(let k=0;k<this.main_notes.length;k++){
 			const note_midi = this.main_notes[k].midi;
-			const note_time = this.main_notes[k].time;			
+			const note_time = this.main_notes[k].time;	
+			anim2.kill_anim(objects.falling_notes[k]);
 			objects.falling_notes[k].time=note_time;
 			objects.falling_notes[k].x=unique_notes[note_midi]*piano_key_width+piano_key_width*0.5;
 			//objects.falling_notes[k].y=300+first_note_time*50-note_time*(50);
