@@ -523,7 +523,7 @@ dialog={
 				if(anim2.any_on())return;
 				dialog.close();		
 				sound.play('click');
-				bridge.send('VKWebAppShowWallPostBox', { message: 'Я играю в Пианиста и мне нравится!'})
+				vkBridge.send('VKWebAppShowWallPostBox', { message: 'Я играю в Пианиста и мне нравится!'})
 				objects.dialog_card.resolver();
 
 			};
