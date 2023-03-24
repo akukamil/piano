@@ -522,7 +522,7 @@ dialog={
 			objects.dialog_ok.pointerdown=function(){
 				if(anim2.any_on())return;
 				dialog.close();		
-				vkBridge.send('VKWebAppShowWallPostBox', { message: 'Я играю в Пианиста и мне нравится!'})
+				vkBridge.send('VKWebAppShowWallPostBox', { message: 'Я играю в Пианиста и мне нравится!',"attachments": "https://vk.com/app51587140"})
 				sound.play('click');
 				objects.dialog_card.resolver();
 
