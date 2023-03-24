@@ -2188,7 +2188,7 @@ async function init_game_env(lang) {
 	
 	//определяем рейтинг
 	my_data.rating = (other_data && other_data.rating) || 0;
-	play_menu.cur_song_id=my_data.rating=0;
+	play_menu.cur_song_id=my_data.rating;
 
 	//убираем лупу
 	objects.id_loup.visible=false;
