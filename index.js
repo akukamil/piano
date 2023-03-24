@@ -1833,7 +1833,7 @@ main_menu={
 	
 	async rules_button_down(){
 		if(anim2.any_on())return;
-		await game.wait_instructions();
+		dialog.show('rules');
 		
 	},
 	
