@@ -455,6 +455,131 @@ big_message={
 
 }
 
+dialog={
+	
+	invite:false,
+	share:false,
+	
+	show(type){		
+
+		
+		objects.dialog_no.pointerdown=function(){};
+		objects.dialog_ok.pointerdown=function(){};
+		
+		if(type==='game_over'){
+			anim2.add(objects.dialog_cont,{alpha:[0, 1]},true,0.4,'linear');	
+			objects.dialog_card.texture=gres.game_over_img.texture;		
+			objects.dialog_no.visible=true;
+			objects.dialog_ok.visible=true;
+			objects.dialog_ok.pointerdown=function(){
+				if(anim2.any_on())return;
+				dialog.close();				
+				game.restart();
+
+			};
+			objects.dialog_no.pointerdown=function(){
+				if(anim2.any_on())return;
+				dialog.close();				
+				game.exit();
+
+			};
+		}
+		
+		if(type==='rules'){
+			anim2.add(objects.dialog_cont,{alpha:[0, 1]},true,0.4,'linear');	
+			objects.dialog_card.texture=gres.rules_img.texture;		
+			objects.dialog_no.visible=false;
+			objects.dialog_ok.visible=true;
+			objects.dialog_ok.pointerdown=function(){
+				if(anim2.any_on())return;
+				sound.play('click');
+				dialog.close();					
+				objects.dialog_card.resolver();
+			};
+			
+			return new Promise(resolver=>{				
+				objects.dialog_card.resolver=resolver;			
+			})
+		}
+		
+		if(type==='ad_break'){
+			anim2.add(objects.dialog_cont,{alpha:[0, 1]},true,0.4,'linear');	
+			objects.dialog_card.texture=gres.ad_break_img.texture;	
+			objects.dialog_no.visible=false;
+			objects.dialog_ok.visible=false;
+			setTimeout(function(){dialog.close()},3000);
+		}
+		
+		if(type==='share'){
+			if(this.share) return;			
+			this.share=true;
+			anim2.add(objects.dialog_cont,{alpha:[0, 1]},true,0.4,'linear');	
+			objects.dialog_card.texture=gres.share_img.texture;	
+			objects.dialog_card.resolver=function(){};
+			objects.dialog_no.visible=true;
+			objects.dialog_ok.visible=true;
+			
+			objects.dialog_ok.pointerdown=function(){
+				if(anim2.any_on())return;
+				dialog.close();		
+				sound.play('click');
+				objects.dialog_card.resolver();
+
+			};
+			objects.dialog_no.pointerdown=function(){
+				if(anim2.any_on())return;
+				dialog.close();	
+				sound.play('click');
+				bridge.send('VKWebAppShowWallPostBox', { message: 'Я играю в Пианиста и мне нравится!'})
+				objects.dialog_card.resolver();
+
+			};
+			return new Promise(resolver=>{				
+				objects.dialog_card.resolver=resolver;			
+			})
+		}
+			
+		if(type==='invite_friends'){
+			if(this.invite) return;
+			this.invite=true;
+			anim2.add(objects.dialog_cont,{alpha:[0, 1]},true,0.4,'linear');	
+			objects.dialog_card.texture=gres.invite_friends_img.texture;	
+			objects.dialog_card.resolver=function(){};
+			objects.dialog_no.visible=true;
+			objects.dialog_ok.visible=true;
+			
+			objects.dialog_ok.pointerdown=function(){
+				if(anim2.any_on())return;
+				dialog.close();	
+				sound.play('click');
+				vkBridge.send('VKWebAppShowInviteBox');
+				objects.dialog_card.resolver();
+
+			};
+			objects.dialog_no.pointerdown=function(){
+				if(anim2.any_on())return;
+				dialog.close();	
+				sound.play('click');
+				objects.dialog_card.resolver();
+
+			};
+			return new Promise(resolver=>{				
+				objects.dialog_card.resolver=resolver;			
+			})
+		}
+		
+		
+	},
+	
+	close(){
+		
+		anim2.add(objects.dialog_cont,{alpha:[1, 0]},false,0.3,'linear');	
+		
+	}
+	
+	
+}
+
 board_func={
 
 	checker_to_move: "",
@@ -946,6 +1071,7 @@ game={
 			objects.falling_notes[k].width=50;
 			objects.falling_notes[k].height=50;
 			objects.falling_notes[k].alpha=1;
+			objects.falling_notes[k].tint=0xffffff;	
 			objects.falling_notes[k].texture=gres.falling_note_img.texture;
 		}		
 		
@@ -971,10 +1097,9 @@ game={
 		
 		
 		//показываем инструкцию для новичков
-		if(my_data.rating===0){
-			await this.wait_instructions();			
-			sound.play('click');
-		}
+		if(my_data.rating===0)
+			await dialog.show('rules');			
+
 
 		
 		//3 доп секунды до первой ноты
@@ -984,20 +1109,23 @@ game={
 	},
 	
 	async restart(){
-		if(anim2.any_on())return;
+		
 		sound.play('click');
 		
 		//время рекламы
 		await ad.check_and_show();
 		
-		objects.msg_cont.visible=false;
 		game.activate();		
 	},
 	
 	exit_down(){
 		if(anim2.any_on())return;
+		this.exit();
+		
+	},
+	
+	exit(){
 		sound.play('click');
-		objects.msg_cont.visible=false;
 		this.close();
 		play_menu.activate();
 		
@@ -1093,19 +1221,12 @@ game={
 		objects.instructions.visible=false;
 		
 	},
-	
-	instructions_down(){
 		
-		objects.instructions.resolver();
-		objects.instructions.visible=false;
-		
-	},
-	
 	stop(){
 		
 		this.on=false;
 		sound.play('crowd_whoo');
-		anim2.add(objects.msg_cont,{y:[-200, objects.msg_cont.sy]},true,0.4,'easeOutBack');
+		dialog.show('game_over');		
 		some_process.game=function(){};
 	},
 	
@@ -1118,7 +1239,6 @@ game={
 		objects.hearts_cont.visible=false;
 		objects.taps_left.visible=false;
 		objects.close_button.visible=false;
-		objects.instructions.visible=false;
 		this.on=false;
 	},
 	
@@ -1164,7 +1284,11 @@ game={
 			const note_time = note.time;
 			const dt=note_time-cur_sec;
 			const pos_y=300-dt*100;
+
 			const sprite_note=objects.falling_notes[k];
+			if(pos_y>300&&sprite_note.y<=300) sprite_note.tint=0xff0000;			
+			
+			
 			if(dt<-0.25&&!note.finished) {
 				
 				if (note.catched){
@@ -1185,11 +1309,10 @@ game={
 		}	
 		
 		if(no_notes){
-			sound.play('applause');
-			this.close();
+			sound.play('applause');			
+			this.close();			
 			play_menu.activate('win');			
 		}
-
 		
 	}
 
@@ -1212,10 +1335,7 @@ ad={
 		this.prv_show = Date.now();
 		
 		this.show();
-		objects.ad_break.visible=true;
-		await anim2.wait(3);
-		objects.ad_break.visible=false;		
-		
+		dialog.show('ad_break');
 	},
 	
 	show() {
@@ -1730,6 +1850,9 @@ play_menu={
 	
 	async activate(result){
 		
+
+		await this.check_vk_dialog();
+		
 		//время рекламы
 		await ad.check_and_show();
 		
@@ -1777,6 +1900,13 @@ play_menu={
 		anim2.add(objects.back_button,{x:[-100, objects.back_button.sx]}, true, 0.5,'easeOutCubic');
 		anim2.add(objects.start_button,{x:[900, objects.start_button.sx]}, true, 0.5,'easeOutCubic');
 		
+	},
+
+	check_vk_dialog(){
+		if(game_platform!=='VK') return;
+		if(Math.random()>0.5)
+			return dialog.show('share');
+		return dialog.show('invite_friends');
 	},
 	
 	start_down(){
@@ -2058,7 +2188,7 @@ async function init_game_env(lang) {
 	
 	//определяем рейтинг
 	my_data.rating = (other_data && other_data.rating) || 0;
-	play_menu.cur_song_id=my_data.rating;
+	play_menu.cur_song_id=my_data.rating=0;
 
 	//убираем лупу
 	objects.id_loup.visible=false;
