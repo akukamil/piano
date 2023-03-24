@@ -511,7 +511,7 @@ dialog={
 		}
 		
 		if(type==='share'){
-			if(this.share) return;			
+			if(this.share) return 'none';			
 			this.share=true;
 			anim2.add(objects.dialog_cont,{alpha:[0, 1]},true,0.4,'linear');	
 			objects.dialog_card.texture=gres.share_img.texture;	
@@ -543,7 +543,7 @@ dialog={
 		}
 			
 		if(type==='invite_friends'){
-			if(this.invite) return;
+			if(this.invite)  return 'none';
 			this.invite=true;
 			anim2.add(objects.dialog_cont,{alpha:[0, 1]},true,0.4,'linear');	
 			objects.dialog_card.texture=gres.invite_friends_img.texture;	
@@ -998,6 +998,8 @@ game={
 	touches_cnt:0,
 	
 	async activate() {		
+	
+		await ad.check_and_show();
 				
 		objects.load_notice.visible=true;
 		const midi_file_id=songs_data[play_menu.cur_song_id].file_name;
@@ -1866,10 +1868,11 @@ play_menu={
 	async activate(result){
 		
 
-		await this.check_vk_dialog();
+		const res=await this.check_vk_dialog();
 		
 		//время рекламы
-		await ad.check_and_show();
+		if(res!=='none')
+			await ad.check_and_show();
 		
 		//this.cur_song_id=my_data.rating;
 		
@@ -1917,12 +1920,10 @@ play_menu={
 		
 	},
 
-	check_vk_dialog(){
+	check_vk_dialog(){		
 		
-		
-		
-		if(game_platform!=='VK') return;
-		if(game_tick<150) return;
+		if(game_platform!=='VK')  return 'none';
+		if(game_tick<150)  return 'none';
 		
 		if(Math.random()>0.5)
 			return dialog.show('share');
