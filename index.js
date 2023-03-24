@@ -1915,7 +1915,12 @@ play_menu={
 	},
 
 	check_vk_dialog(){
-		//if(game_platform!=='VK') return;
+		
+		
+		
+		if(game_platform!=='VK') return;
+		if(game_tick<150) return;
+		
 		if(Math.random()>0.5)
 			return dialog.show('share');
 		return dialog.show('invite_friends');
