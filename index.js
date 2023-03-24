@@ -522,6 +522,7 @@ dialog={
 			objects.dialog_ok.pointerdown=function(){
 				if(anim2.any_on())return;
 				dialog.close();		
+				bridge.send('VKWebAppShowWallPostBox', { message: 'Я играю в Пианиста и мне нравится!'})
 				sound.play('click');
 				objects.dialog_card.resolver();
 
@@ -529,8 +530,7 @@ dialog={
 			objects.dialog_no.pointerdown=function(){
 				if(anim2.any_on())return;
 				dialog.close();	
-				sound.play('click');
-				bridge.send('VKWebAppShowWallPostBox', { message: 'Я играю в Пианиста и мне нравится!'})
+				sound.play('click');				
 				objects.dialog_card.resolver();
 
 			};
