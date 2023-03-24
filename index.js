@@ -522,14 +522,17 @@ dialog={
 			objects.dialog_ok.pointerdown=function(){
 				if(anim2.any_on())return;
 				dialog.close();		
-				vkBridge.send('VKWebAppShowWallPostBox', { message: 'Я играю в Пианиста и мне нравится!',"attachments": "https://vk.com/app51587140"})
 				sound.play('click');
+				bridge.send('VKWebAppShowWallPostBox', { message: 'Я играю в Пианиста и мне нравится!'})
 				objects.dialog_card.resolver();
 
 			};
 			objects.dialog_no.pointerdown=function(){
 				if(anim2.any_on())return;
-				dialog.close();	
+				objects.dialog_no.visible=false;
+				objects.dialog_ok.visible=false;
+				objects.dialog_card.texture=gres.thanks_img.texture;	
+				dialog.close_delayed();	
 				sound.play('click');				
 				objects.dialog_card.resolver();
 
@@ -558,7 +561,10 @@ dialog={
 			};
 			objects.dialog_no.pointerdown=function(){
 				if(anim2.any_on())return;
-				dialog.close();	
+				objects.dialog_no.visible=false;
+				objects.dialog_ok.visible=false;
+				objects.dialog_card.texture=gres.thanks_img.texture;	
+				dialog.close_delayed();	
 				sound.play('click');
 				objects.dialog_card.resolver();
 
@@ -574,6 +580,12 @@ dialog={
 	close(){
 		
 		anim2.add(objects.dialog_cont,{alpha:[1, 0]},false,0.3,'linear');	
+		
+	},
+	
+	close_delayed(){
+		
+		setTimeout(function(){dialog.close()},2000);
 		
 	}
 	
@@ -1903,7 +1915,7 @@ play_menu={
 	},
 
 	check_vk_dialog(){
-		if(game_platform!=='VK') return;
+		//if(game_platform!=='VK') return;
 		if(Math.random()>0.5)
 			return dialog.show('share');
 		return dialog.show('invite_friends');
