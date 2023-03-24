@@ -1344,28 +1344,32 @@ ad={
 		if ((Date.now() - this.prv_show) < 90000 )
 			return false;
 		this.prv_show = Date.now();
-		
-		this.show();
-		dialog.show('ad_break');
+		dialog.show('ad_break');		
+		await this.show();
+
 	},
 	
 	show() {
 				
 		if (game_platform==="YANDEX") {			
 			//показываем рекламу
-			window.ysdk.adv.showFullscreenAdv({
-			  callbacks: {
-				onClose: function() {}, 
-				onError: function() {}
-						}
+			await new Promise(resolver=>{
+				
+				window.ysdk.adv.showFullscreenAdv({
+					callbacks: {
+						onClose: function() {resolver()}, 
+						onError: function() {resolver()},
+					}
+				})				
+				
 			})
+
 		}
 		
 		if (game_platform==="VK") {
 					 
-			vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})
-			.then(data => console.log(data.result))
-			.catch(error => console.log(error));	
+			await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})
+
 		}		
 
 		if (game_platform==="MY_GAMES") {
