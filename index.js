@@ -534,7 +534,7 @@ dialog={
 				objects.dialog_card.texture=gres.thanks_img.texture;	
 				dialog.close_delayed();	
 				sound.play('click');				
-				objects.dialog_card.resolver();
+				
 
 			};
 			return new Promise(resolver=>{				
@@ -566,7 +566,6 @@ dialog={
 				objects.dialog_card.texture=gres.thanks_img.texture;	
 				dialog.close_delayed();	
 				sound.play('click');
-				objects.dialog_card.resolver();
 
 			};
 			return new Promise(resolver=>{				
@@ -585,7 +584,7 @@ dialog={
 	
 	close_delayed(){
 		
-		setTimeout(function(){dialog.close()},2000);
+		setTimeout(function(){objects.dialog_card.resolver();dialog.close()},2000);
 		
 	}
 	
