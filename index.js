@@ -1871,7 +1871,7 @@ play_menu={
 		const res=await this.check_vk_dialog();
 		
 		//время рекламы
-		if(res!=='none')
+		if(res==='none')
 			await ad.check_and_show();
 		
 		//this.cur_song_id=my_data.rating;
