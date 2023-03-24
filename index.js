@@ -1349,11 +1349,11 @@ ad={
 
 	},
 	
-	show() {
+	async show() {
 				
 		if (game_platform==="YANDEX") {			
 			//показываем рекламу
-			return new Promise(resolver=>{
+			await new Promise(resolver=>{
 				
 				window.ysdk.adv.showFullscreenAdv({
 					callbacks: {
