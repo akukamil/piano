@@ -1298,7 +1298,7 @@ game={
 			const pos_y=300-dt*100;
 
 			const sprite_note=objects.falling_notes[k];
-			if(pos_y>300&&sprite_note.y<=300) sprite_note.tint=0xff0000;			
+			if(!note.catched&&pos_y>300&&sprite_note.y<=300) sprite_note.tint=0xff0000;				
 			
 			
 			if(dt<-0.25&&!note.finished) {
