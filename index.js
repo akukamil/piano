@@ -582,7 +582,8 @@ dialog={
 	},
 	
 	close(){
-		objects.dialog_card.resolver?.();
+		if(objects.dialog_card.resolver && typeof objects.dialog_card.resolver === 'function')
+			objects.dialog_card.resolver();
 		anim2.add(objects.dialog_cont,{alpha:[1, 0]},false,0.3,'linear');	
 		
 	},
