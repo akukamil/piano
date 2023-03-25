@@ -4,6 +4,7 @@ var any_dialog_active=0, some_process = {}, game_platform='';
 var my_data={opp_id : ''},opp_data={};
 var avatar_loader;
 var speed=0.95;
+const pix_per_tm=125;
 
 class song_card_class extends PIXI.Container{
 		
@@ -508,6 +509,10 @@ dialog={
 			objects.dialog_no.visible=false;
 			objects.dialog_ok.visible=false;
 			setTimeout(function(){dialog.close()},3000);
+			return new Promise(resolver=>{				
+				objects.dialog_card.resolver=resolver;			
+			})
+			
 		}
 		
 		if(type==='share'){
@@ -577,7 +582,7 @@ dialog={
 	},
 	
 	close(){
-		
+		objects.dialog_card.resolver?.();
 		anim2.add(objects.dialog_cont,{alpha:[1, 0]},false,0.3,'linear');	
 		
 	},
@@ -996,6 +1001,8 @@ game={
 	on:false,
 	notes_in_song:0,
 	touches_cnt:0,
+	piano_key_width:0,
+	unique_notes:{},
 	
 	async activate() {		
 	
@@ -1006,7 +1013,7 @@ game={
 		speed=songs_data[play_menu.cur_song_id].speed;
 		const midi = await Midi.fromUrl(git_src+'/new_midi/'+midi_file_id+'.mid');
 		
-		let unique_notes={};
+		this.unique_notes={};
 		let all_unique_notes={};
 		
 		//жизни
@@ -1036,7 +1043,7 @@ game={
 		
 		this.all_notes=[...this.main_notes,...this.bass_notes];
 		for(let note of this.all_notes) note.played=false;
-		for(let note of this.main_notes) {unique_notes[note.midi]=note.midi;note.catched=false;note.finished=false};		
+		for(let note of this.main_notes) {this.unique_notes[note.midi]=note.midi;note.catched=false;note.finished=false;note.added=false;};		
 		for(let note of this.all_notes) all_unique_notes[note.midi]=note.midi;		
 		
 		//считаем сколько нот в песне
@@ -1044,49 +1051,43 @@ game={
 		objects.taps_left.text=game.notes_in_song;
 		
 		//считаем количество нот
-		const unique_notes_arr=Object.keys(unique_notes);
+		const unique_notes_arr=Object.keys(this.unique_notes);
 		const unique_notes_num=unique_notes_arr.length;	
 		
 		//располагаем клавиши на экране
-		const piano_key_width=800/unique_notes_num;
+		this.piano_key_width=800/unique_notes_num;
 		objects.piano_keys.forEach(key=>key.visible=false);
 		for(let k=0;k<unique_notes_num;k++){
 			objects.piano_keys[k].texture=gres['piano_key'+unique_notes_num].texture;
 			objects.piano_keys[k].visible=true;
 			
-			objects.piano_keys[k].width=piano_key_width;
+			objects.piano_keys[k].width=this.piano_key_width;
 			objects.piano_keys[k].height=210;
-			objects.piano_keys[k].x=k*piano_key_width;		
+			objects.piano_keys[k].x=k*this.piano_key_width;		
 			objects.piano_keys[k].midi=+unique_notes_arr[k];	
 		}
 		
 		//это подсветка нажатой клавиши
-		objects.piano_key_press.width=piano_key_width;
+		objects.piano_key_press.width=this.piano_key_width;
 		
 		//добавляем порядок ноты по возрастанию
 		let ind = 0;
-		for (key in unique_notes)		
-			unique_notes[key] = ind++;
+		for (key in this.unique_notes)		
+			this.unique_notes[key] = ind++;
 
 		//определяем время первой ноты
 		const first_note_time=this.main_notes[0].time;
 
 		//начальное расположение падающих нот
-		objects.falling_notes.forEach(f=>f.visible=false)
-		for(let k=0;k<this.main_notes.length;k++){
-			const note_midi = this.main_notes[k].midi;
-			const note_time = this.main_notes[k].time;	
-			anim2.kill_anim(objects.falling_notes[k]);
-			objects.falling_notes[k].time=note_time;
-			objects.falling_notes[k].x=unique_notes[note_midi]*piano_key_width+piano_key_width*0.5;
-			//objects.falling_notes[k].y=300+first_note_time*50-note_time*(50);
-			objects.falling_notes[k].visible=true;
-			objects.falling_notes[k].width=50;
-			objects.falling_notes[k].height=50;
-			objects.falling_notes[k].alpha=1;
-			objects.falling_notes[k].tint=0xffffff;	
-			objects.falling_notes[k].texture=gres.falling_note_img.texture;
-		}		
+		objects.falling_notes.forEach(function(f){
+			f.visible=false;
+			f.midi=0;
+			f.time=0;
+			f.true_note_index=0;
+			f.catched=false;
+			anim2.kill_anim(f);			
+		})
+
 		
 		
 		//подгружаем ноты которые будут играть и звучать
@@ -1107,13 +1108,9 @@ game={
 		anim2.add(objects.hand_icon,{y:[-200, objects.hand_icon.sy]}, true, 0.5,'easeOutCubic');
 		anim2.add(objects.taps_left,{y:[-200, objects.taps_left.sy]}, true, 0.5,'easeOutCubic');
 		anim2.add(objects.close_button,{y:[-200, objects.close_button.sy]}, true, 0.5,'easeOutCubic');
-		
-		
+				
 		//показываем инструкцию для новичков
-		if(my_data.rating===0)
-			await dialog.show('rules');			
-
-
+		if(my_data.rating===0) await dialog.show('rules');
 		
 		//3 доп секунды до первой ноты
 		this.play_start=game_tick-first_note_time/speed+3;
@@ -1189,10 +1186,10 @@ game={
 		//game.play_note('M'+this.midi,1);
 		sound.play('M'+this.midi,game.notes_loader.resources)
 		
-		let good=false;			
+		
 		let close_notes={};
-		for(let k=0;k<game.main_notes.length;k++){
-			const note = game.main_notes[k];
+		for(let k=0;k<objects.falling_notes.length;k++){
+			const note = objects.falling_notes[k];
 			const note_time = note.time;
 			const note_midi = note.midi;
 			const d=Math.abs(note_time-cur_sec);
@@ -1204,12 +1201,12 @@ game={
 		if (Object.keys(close_notes).length>0) {
 			let min_note_ind = Object.keys(close_notes).reduce((key, v) => close_notes[v] < close_notes[key] ? v : key);			
 			
-			game.main_notes[+min_note_ind].catched=true;
-			game.main_notes[+min_note_ind].finished=true;
-			const snote=objects.falling_notes[+min_note_ind];
-			snote.texture=gres.falling_note_ok_img.texture;
+			const fnote=objects.falling_notes[+min_note_ind];
+			fnote.catched=true;
+			fnote.finished=true;
+			fnote.texture=gres.falling_note_ok_img.texture;			
+			anim2.add(fnote,{scale_xy:[fnote.scale_xy, fnote.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
 			
-			anim2.add(snote,{scale_xy:[snote.scale_xy, snote.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
 		}else{
 			sound.play('locked');
 		}
@@ -1269,6 +1266,31 @@ game={
 
 	},
 			
+	add_falling_note(note_midi, note_time, note_index){
+		
+		for(let note of objects.falling_notes){
+			if(note.visible===false){				
+				note.time=note_time;
+				note.midi=note_midi;
+				note.x=this.unique_notes[note_midi]*this.piano_key_width+this.piano_key_width*0.5;
+				note.visible=true;
+				note.width=50;
+				note.height=50;
+				note.alpha=1;
+				note.true_note_index=note_index;
+				note.finished=false;
+				note.catched=false;
+				note.tint=0xffffff;	
+				note.texture=gres.falling_note_img.texture;		
+				console.log('добавлена нота')
+				return;
+			}			
+		}
+		alert('Не нашли свободных нот!!!')
+		
+		
+	},
+			
 	process(){
 		
 		
@@ -1277,7 +1299,6 @@ game={
 		
 		//это басы
 		for(let k=0;k<this.bass_notes.length;k++){
-
 			const note = this.bass_notes[k];
 			const note_time = note.time;
 			const note_midi = note.midi;
@@ -1289,36 +1310,55 @@ game={
 			}
 		}	
 
-		//это основные ноты
-		let no_notes=true;
+		//это проверка и добавка спрайтов нот
+		let no_notes=true;		
 		for(let k=0;k<this.main_notes.length;k++){
-
 			const note = this.main_notes[k];
 			const note_time = note.time;
+			const note_midi = note.midi;
 			const dt=note_time-cur_sec;
-			const pos_y=300-dt*100;
-
-			const sprite_note=objects.falling_notes[k];
-			if(!note.catched&&pos_y>300&&sprite_note.y<=300) sprite_note.tint=0xff0000;				
-			
-			
-			if(dt<-0.25&&!note.finished) {
-				
-				if (note.catched){
-					
-					
-				} else {
-					game.decrease_life();
-					sprite_note.texture=gres.falling_note_no_img.texture;	
-					anim2.add(sprite_note,{scale_xy:[sprite_note.scale_xy, sprite_note.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
-				}
-				note.finished=true;
+			const pos_y=300-dt*pix_per_tm;			
+			if (!note.added&&pos_y>-50){			
+				this.add_falling_note(note_midi, note_time,k);
+				note.added=true;
 			}
 			
-			if(dt>-3)
+			if(pos_y<500)
 				no_notes=false;
+		}
+		
+		//это обработка падающих нот-спрайтов
 
-			sprite_note.y=pos_y;			
+		for(let k=0;k<objects.falling_notes.length;k++){
+
+			const visible=objects.falling_notes[k].visible;
+			if(visible){
+				
+				const sprite_note = objects.falling_notes[k];
+				const note_time = sprite_note.time;
+				const note_midi = sprite_note.midi;
+				const dt=note_time-cur_sec;
+				const pos_y=300-dt*pix_per_tm;
+				
+				if(!sprite_note.catched&&pos_y>300&&sprite_note.y<=300) sprite_note.tint=0xff0000;				
+							
+				if(dt<-0.25&&!sprite_note.finished) {
+					
+					if (sprite_note.catched){
+						
+						
+					} else {
+						game.decrease_life();
+						sprite_note.texture=gres.falling_note_no_img.texture;	
+						anim2.add(sprite_note,{scale_xy:[sprite_note.scale_xy, sprite_note.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
+					}
+					sprite_note.finished=true;
+				}				
+
+				sprite_note.y=pos_y;					
+				
+			}
+		
 		}	
 		
 		if(no_notes){
@@ -1346,8 +1386,9 @@ ad={
 		if ((Date.now() - this.prv_show) < 90000 )
 			return false;
 		this.prv_show = Date.now();
-		dialog.show('ad_break');		
-		await this.show();
+		
+		await Promise.all([dialog.show('ad_break'), this.show()])
+		
 
 	},
 	
@@ -1745,6 +1786,7 @@ resize=function() {
 
 vis_change=function() {
 
+
 		
 }
 
@@ -1946,7 +1988,7 @@ play_menu={
 	up_down(){			
 
 		if(!objects.songs_cards_cont.ready||this.cur_song_id===songs_data.length-1||my_data.rating<this.cur_song_id+1){
-		sound.play('locked2');
+			sound.play('locked2');
 			return;				
 		}
 				
