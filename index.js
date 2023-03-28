@@ -1179,6 +1179,7 @@ game={
 	touch_down(){
 		
 		if(!game.on) return;
+		if(!this.visible) return;
 		
 		const cur_sec=(game_tick-game.play_start)*speed;
 		
@@ -1232,7 +1233,7 @@ game={
 		objects.instructions.visible=false;
 		
 	},
-		
+		 
 	stop(){
 		
 		this.on=false;
@@ -1262,8 +1263,16 @@ game={
 		if(this.life===0) game.stop();
 	},
 	
-	key_down(e){
+	key_down(e){		
+
+		if(!game.on) return;
 		
+		const key_codes=[49,50,51,52,53,54,55,56,57,48,189,187,8,45,36];
+		const key_index=key_codes.findIndex(x => x === e.keyCode);		
+		
+		if(key_index===-1) return;
+		
+		this.touch_down.bind(objects.piano_keys[key_index])();
 
 	},
 			
@@ -1833,6 +1842,7 @@ async function load_resources() {
 	
 	//убираем элементы загрузки
 	document.getElementById("m_progress").outerHTML = "";	
+	
 }
 
 language_dialog = {
@@ -1988,10 +1998,16 @@ play_menu={
 		
 	up_down(){			
 
-		if(!objects.songs_cards_cont.ready||this.cur_song_id===songs_data.length-1||my_data.rating<this.cur_song_id+1){
+		if(!objects.songs_cards_cont.ready||this.cur_song_id===songs_data.length-1){
 			sound.play('locked2');
 			return;				
 		}
+		
+		if(my_data.rating<this.cur_song_id+1){
+			sound.play('locked2');
+			//return;				
+		}
+		
 				
 		sound.play('click');
 				
@@ -2140,7 +2156,7 @@ async function init_game_env(lang) {
 	console.log(game_platform, LANG);
 						
 	//отображаем шкалу загрузки
-	document.body.innerHTML='<style>html,body {margin: 0;padding: 0;height: 100%;	}body {display: flex;align-items: center;justify-content: center;background-color: rgba(41,41,41,1);flex-direction: column	}#m_progress {	  background: #1a1a1a;	  justify-content: flex-start;	  border-radius: 5px;	  align-items: center;	  position: relative;	  padding: 0 5px;	  display: none;	  height: 50px;	  width: 70%;	}	#m_bar {	  box-shadow: 0 1px 0 rgba(255, 255, 255, .5) inset;	  border-radius: 5px;	  background: rgb(119, 119, 119);	  height: 70%;	  width: 0%;	}	</style></div><div id="m_progress">  <div id="m_bar"></div></div>';
+	document.body.innerHTML='<style>html,body {margin: 0;padding: 0;height: 100%;-webkit-touch-callout: none;-webkit-user-select: none;user-select: none;}body {display: flex;align-items: center;justify-content: center;background-color: rgba(41,41,41,1);flex-direction: column	}#m_progress {	  background: #1a1a1a;	  justify-content: flex-start;	  border-radius: 5px;	  align-items: center;	  position: relative;	  padding: 0 5px;	  display: none;	  height: 50px;	  width: 70%;	}	#m_bar {	  box-shadow: 0 1px 0 rgba(255, 255, 255, .5) inset;	  border-radius: 5px;	  background: rgb(119, 119, 119);	  height: 70%;	  width: 0%;	}	</style></div><div id="m_progress">  <div id="m_bar"></div></div>';
 	
 	
 	await load_resources();
@@ -2160,7 +2176,7 @@ async function init_game_env(lang) {
 	resize();
 	window.addEventListener("resize", resize);	
 	
-	window.addEventListener('keydown', function(event) { game.key_down(event.key)});
+	//window.addEventListener('keydown', function(event) { game.key_down(event)});
 		
     //создаем спрайты и массивы спрайтов и запускаем первую часть кода
     for (var i = 0; i < load_list.length; i++) {
