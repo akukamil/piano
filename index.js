@@ -1845,7 +1845,7 @@ async function load_resources() {
 	
 }
 
-language_dialog = {
+language_dialog={
 	
 	p_resolve : {},
 	
@@ -1907,8 +1907,7 @@ main_menu={
 		anim2.add(objects.rules_button,{y:[objects.rules_button.sy,500]}, false, 1,'linear',false);
 		
 	}
-	
-	
+		
 }
 
 play_menu={
@@ -1920,7 +1919,6 @@ play_menu={
 	
 	async activate(result){
 		
-
 		const res=await this.check_vk_dialog();
 		
 		//время рекламы
@@ -2005,7 +2003,7 @@ play_menu={
 		
 		if(my_data.rating<this.cur_song_id+1){
 			sound.play('locked2');
-			//return;				
+			return;				
 		}
 		
 				
