@@ -2004,8 +2004,7 @@ play_menu={
 		if(my_data.rating<this.cur_song_id+1){
 			sound.play('locked2');
 			return;				
-		}
-		
+		}		
 				
 		sound.play('click');
 				
