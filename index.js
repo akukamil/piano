@@ -70,13 +70,18 @@ class song_card_class extends PIXI.Container{
 		this.avatar.texture=PIXI.Texture.WHITE;
 		this.card_num.text=song_id+1;
 		
+		if(game_platform==='YANDEX' || game_platform==='DEBUG'){
+			this.avatar.texture=gres.avatar_replace.texture;			
+			return;
+		}
+
+		
 		if (!avatar_loader.resources[avatar_res]){			
 			avatar_loader.add(songs_data[song_id].artist_eng,'artists/'+songs_data[song_id].artist_eng+'.jpg',{timeout: 5000});			
 			await new Promise(resolve=> avatar_loader.load(resolve));
 		}
-
+		
 		this.avatar.texture=avatar_loader.resources[avatar_res].texture;	
-	
 	}
 	
 }
