@@ -1946,7 +1946,7 @@ play_menu={
 		await new Promise(resolve=> avatar_loader.load(resolve))					
 		for (let i=0;i<cards_num;i++){			
 			const song_id_to_add=this.cur_song_id-1+i;
-			if(song_id_to_add>-1){
+			if(song_id_to_add>-1&&song_id_to_add<songs_data.length){
 				objects.songs_cards[i].y=380-i*70;
 				await objects.songs_cards[i].set(song_id_to_add);					
 			}			
