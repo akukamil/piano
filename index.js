@@ -1082,7 +1082,7 @@ game={
 			this.unique_notes[key] = ind++;
 
 		//определяем время первой ноты
-		const first_note_time=this.main_notes[0].time;
+		const first_note_time=Math.min(this.main_notes[0].time,this.bass_notes[0].time);
 
 		//начальное расположение падающих нот
 		objects.falling_notes.forEach(function(f){
