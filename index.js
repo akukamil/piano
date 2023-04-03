@@ -1082,7 +1082,9 @@ game={
 			this.unique_notes[key] = ind++;
 
 		//определяем время первой ноты
-		const first_note_time=this.main_notes[0].time;
+		let first_note_time=this.main_notes[0].time;
+		if(this.bass_notes.length>0 && this.bass_notes[0].time<first_note_time)
+			first_note_time=this.bass_notes[0].time
 
 		//начальное расположение падающих нот
 		objects.falling_notes.forEach(function(f){
@@ -1101,7 +1103,7 @@ game={
 			this.notes_loader=new PIXI.Loader();
 		for (let note of Object.keys(all_unique_notes)){
 			if (this.notes_loader.resources['M'+note]===undefined)
-				this.notes_loader.add('M'+note,'acoustic_grand_piano/'+this.midi_number_to_name[note]+'.mp3');			
+				this.notes_loader.add('M'+note,`instruments/edited/${play_menu.instrument}/`+this.midi_number_to_name[note]+'.mp3');			
 			
 		}
 
@@ -1921,6 +1923,7 @@ play_menu={
 	top_card:null,
 	bottom_card:null,
 	cur_song_id:3,
+	instrument:'acoustic_grand_piano',
 	
 	async activate(result){
 		
