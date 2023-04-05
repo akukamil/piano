@@ -6,6 +6,15 @@ var avatar_loader;
 var speed=0.95;
 const pix_per_tm=125;
 
+inst_data=[{name:'acoustic_grand_piano',price:0,name_rus:'Акустический рояль'},
+				{name:'electric_piano',price:10000,name_rus:'Электронное пианино'},
+				{name:'acoustic_guitar_steel',price:15000,name_rus:'Акустическая гитара'},
+				{name:'music_box',price:27000,name_rus:'Музыкальная шкатулка'},
+				{name:'flute',price:28000,name_rus:'Флейта'},
+				{name:'pan_flute',price:29000,name_rus:'Флейта Пана'},
+				{name:'vibraphone',price:40000,name_rus:'Вибрафон'},
+				{name:'electric_guitar_jazz',price:65000,name_rus:'Электрогитара джаз'}];
+
 class song_card_class extends PIXI.Container{
 		
 	constructor(){
@@ -117,12 +126,77 @@ class lb_player_card_class extends PIXI.Container{
 
 		this.rating=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
 		this.rating.x=298;
-		this.rating.tint=0xff55ff;
+		this.rating.tint=0xffddff;
 		this.rating.y=22;
 
 		this.addChild(this.bcg,this.place, this.avatar, this.name, this.rating);
 	}
 
+
+}
+
+class inst_card_class extends PIXI.Container{
+	
+	constructor(){
+		
+		super();
+		
+		this.bcg=new PIXI.Sprite(gres.inst_bcg.texture);
+		this.bcg.width=this.bcg.height=80
+		
+		this.pic=new PIXI.Sprite();
+		this.pic.width=this.pic.height=60
+		this.pic.x=this.pic.y=10
+		
+		this.name='';
+		
+		this.pic.interactive=true;
+		this.pic.pointerdown=play_menu.inst_down.bind(this);
+		
+		this.visible=false;
+		this.addChild(this.bcg,this.pic);		
+		
+	}
+	
+	
+}
+
+var message =  {
+	
+	promise_resolve :0,
+	
+	add : async function(text, timeout) {
+		
+		if (this.promise_resolve!==0)
+			this.promise_resolve("forced");
+		
+		if (timeout === undefined) timeout = 3000;
+		
+		//воспроизводим звук
+		sound.play('message');
+
+		objects.message_text.text=text;
+
+		await anim2.add(objects.message_cont,{x:[-200,objects.message_cont.sx]}, true, 0.25,'easeOutBack');
+
+		let res = await new Promise((resolve, reject) => {
+				message.promise_resolve = resolve;
+				setTimeout(resolve, timeout)
+			}
+		);
+		
+		if (res === "forced")
+			return;
+
+		anim2.add(objects.message_cont,{x:[objects.message_cont.sx, -200]}, false, 0.25,'easeInBack');			
+	},
+	
+	clicked : function() {
+		
+		
+		message.promise_resolve();
+		
+	}
 
 }
 
@@ -208,6 +282,15 @@ anim2={
 		} else {
 			return n1 * (x -= 2.625 / d1) * x + 0.984375;
 		}
+	},
+	
+	easeBridge(x){
+		
+		if(x<0.154)
+			return 1.2-Math.pow(x*10-1.095445,2);
+		if(x>0.845)
+			return 1.2-Math.pow((1-x)*10-1.095445,2);
+		return 1		
 	},
 	
 	easeInCubic: function(x) {
@@ -371,7 +454,7 @@ dialog={
 			objects.dialog_ok.pointerdown=function(){
 				if(anim2.any_on())return;
 				dialog.close();				
-				game.restart();
+				game.exit();
 
 			};
 			objects.dialog_no.pointerdown=function(){
@@ -891,7 +974,7 @@ game={
 	bass_notes:[],	
 	all_notes:[],
 	song_id:0,
-	notes_loader:null,
+	notes_loader:{},
 	audio_buffers :[],
 	play_start:0,
 	life:3,
@@ -990,16 +1073,16 @@ game={
 		
 		
 		//подгружаем ноты которые будут играть и звучать
-		if(this.notes_loader===null)
-			this.notes_loader=new PIXI.Loader();
+		if(this.notes_loader[play_menu.instrument]===undefined)
+			this.notes_loader[play_menu.instrument]=new PIXI.Loader();
 		for (let note of Object.keys(all_unique_notes)){
-			if (this.notes_loader.resources['M'+note]===undefined)
-				this.notes_loader.add('M'+note,`instruments/edited/${play_menu.instrument}/`+this.midi_number_to_name[note]+'.mp3');			
+			if (this.notes_loader[play_menu.instrument].resources['M'+note]===undefined)
+				this.notes_loader[play_menu.instrument].add('M'+note,`instruments/edited/${play_menu.instrument}/`+this.midi_number_to_name[note]+'.mp3');			
 			
 		}
 
 		
-		await new Promise(resolve=>this.notes_loader.load(resolve));
+		await new Promise(resolve=>this.notes_loader[play_menu.instrument].load(resolve));
 		objects.load_notice.visible=false;
 		
 		anim2.add(objects.piano_keys_cont,{y:[600, 0]}, true, 0.5,'easeOutCubic');
@@ -1053,7 +1136,7 @@ game={
 		//это источник звука
 		var source = audio_context.createBufferSource();
 		
-		source.buffer = this.notes_loader.resources[midi_number].sound.media.buffer;			
+		source.buffer = this.notes_loader[play_menu.instrument].resources[midi_number].sound.media.buffer;			
 		source.connect(audio_context.destination);			
 					
 		/*source.gainNode = audio_context.createGain();
@@ -1084,7 +1167,7 @@ game={
 		objects.piano_key_press.x=this.x;
 		anim2.add(objects.piano_key_press,{alpha:[1, 0]},false,1,'linear',false);
 		//game.play_note('M'+this.midi,1);
-		sound.play('M'+this.midi,game.notes_loader.resources)
+		sound.play('M'+this.midi,game.notes_loader[play_menu.instrument].resources)
 		
 		
 		let close_notes={};
@@ -1104,6 +1187,7 @@ game={
 			const fnote=objects.falling_notes[+min_note_ind];
 			fnote.catched=true;
 			fnote.finished=true;
+			play_menu.money_in_sack++;
 			fnote.texture=gres.falling_note_ok_img.texture;			
 			anim2.add(fnote,{scale_xy:[fnote.scale_xy, fnote.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
 			
@@ -1200,11 +1284,9 @@ game={
 	},
 			
 	process(){
-		
-		
+				
 		const cur_sec=(game_tick-this.play_start)*speed;
-		
-		
+				
 		//это басы
 		for(let k=0;k<this.bass_notes.length;k++){
 			const note = this.bass_notes[k];
@@ -1213,7 +1295,7 @@ game={
 			const dt=note_time-cur_sec;
 			const pos_y=300-dt*100;			
 			if(pos_y>=300 && note.played===false){				
-				sound.play('M'+note_midi,this.notes_loader.resources);					
+				sound.play('M'+note_midi,this.notes_loader[play_menu.instrument].resources);					
 				note.played=true;					
 			}
 		}	
@@ -1716,7 +1798,7 @@ async function load_resources() {
         if (load_list[i].class === "sprite" || load_list[i].class === "image" )
             game_res.add(load_list[i].name, git_src+'res/'+lang_pack+'/'+load_list[i].name+"."+load_list[i].image_format);	
 
-
+	game_res.add('money',git_src+'sounds/money.mp3');
 	game_res.add('close',git_src+'sounds/close.mp3');
 	game_res.add('click',git_src+'sounds/click.mp3');
 	game_res.add('locked',git_src+'sounds/locked.mp3');
@@ -1762,6 +1844,118 @@ language_dialog={
 	
 }
 
+shop={
+	
+
+	cur_inst:0,
+	
+	activate(){
+		
+		objects.shop_cont.visible=true;
+		
+		this.update();
+	},
+	
+	update(){
+		
+		objects.shop_inst_pic.texture=gres[inst_data[this.cur_inst].name].texture;
+		objects.shop_inst_name.text=inst_data[this.cur_inst].name_rus;
+		objects.shop_inst_price.text=inst_data[this.cur_inst].price +'$';
+		objects.shop_money.text=my_data.money +'$';
+	},
+	
+	close(){
+		objects.shop_cont.visible=false;
+		
+	},
+	
+	prv_inst_down(){
+		
+		if(anim2.any_on()){
+			sound.play('locked2');
+			return;				
+		}
+		
+		if (this.cur_inst===0) {
+			sound.play('locked2');
+			return;
+		}
+		
+		
+		
+		sound.play('click');
+		this.cur_inst--;
+		this.update();
+		
+	},
+	
+	next_inst_down(){
+		
+		if(anim2.any_on()){
+			sound.play('locked2');
+			return;				
+		}
+		
+		if (this.cur_inst===inst_data.length-1){
+			sound.play('locked2');
+			return;
+		}
+		
+		sound.play('click');
+		this.cur_inst++;
+		this.update();
+	},
+	
+	back_button_down(){
+		
+		if(anim2.any_on()){
+			sound.play('locked2');
+			return;				
+		}
+		
+		sound.play('click');
+		this.close();
+		main_menu.activate();
+		
+	},	
+	
+	buy_inst_down(){
+		
+		if(anim2.any_on()){
+			sound.play('locked2');
+			return;				
+		}
+		
+		const price=inst_data[this.cur_inst].price;
+		const name_rus=inst_data[this.cur_inst].name_rus;
+		
+		if (my_data.money<price){
+			message.add('У вас нет денег чтобы купить этот инструмент');
+			sound.play('locked2');
+			return;		
+		}
+		
+		if (my_data.inst.includes(this.cur_inst)){
+			message.add('Этот инструмент уже у вас есть');
+			sound.play('locked2');
+			return;			
+		}
+		
+		my_data.money-=price;
+		this.update();
+		
+		sound.play('click');
+		my_data.inst.push(this.cur_inst);
+		firebase.database().ref('players/'+my_data.uid+'/money').set(my_data.money);
+		firebase.database().ref('players/'+my_data.uid+'/inst').set(my_data.inst);
+		sound.play('money');
+		message.add('Куплено! ('+name_rus+')');
+		
+	}
+	
+	
+}
+
 main_menu={
 	
 	activate(){
@@ -1771,7 +1965,7 @@ main_menu={
 		anim2.add(objects.play_button,{x:[-300, objects.play_button.sx],alpha:[0,1]}, true, 1,'linear',false);
 		anim2.add(objects.lb_button,{x:[900, objects.lb_button.sx],alpha:[0,1]}, true, 1,'linear',false);
 		anim2.add(objects.rules_button,{y:[500, objects.rules_button.sy],alpha:[0,1]}, true, 1,'linear',false);
-		
+		anim2.add(objects.shop_button,{y:[500, objects.shop_button.sy],alpha:[0,1]}, true, 1,'linear',false);
 	},
 	
 	play_button_down(){
@@ -1797,13 +1991,25 @@ main_menu={
 		
 	},
 		
+	shop_button_down(){
+		
+		if(anim2.any_on()){
+			sound.play('locked2');
+			return;				
+		}
+		
+		sound.play('click');
+		this.close();
+		shop.activate();		
+	},
+		
 	close(){
 		
 		anim2.add(objects.game_title,{y:[objects.game_title.sy,-100]}, false, 1,'linear',false);
 		anim2.add(objects.play_button,{x:[objects.play_button.sx,-300]}, false, 1,'linear',false);
 		anim2.add(objects.lb_button,{x:[objects.lb_button.sx,900]}, false, 1,'linear',false);
 		anim2.add(objects.rules_button,{y:[objects.rules_button.sy,500]}, false, 1,'linear',false);
-		
+		anim2.add(objects.shop_button,{y:[objects.shop_button.y,500],alpha:[1,0]}, false, 1,'linear',false);
 	}
 		
 }
@@ -1814,7 +2020,9 @@ play_menu={
 	top_card:null,
 	bottom_card:null,
 	cur_song_id:3,
+	cur_inst:0,
 	instrument:'acoustic_grand_piano',
+	money_in_sack:0,
 	
 	async activate(result){
 		
@@ -1830,6 +2038,29 @@ play_menu={
 			avatar_loader=new PIXI.Loader();
 				
 		const cards_num=objects.songs_cards.length;
+		
+		if(this.money_in_sack>0){
+			
+			anim2.add(objects.money_sack_cont,{x:[-200, 0],scale_x:[0.4,1]},false,3,'easeBridge');
+			sound.play('money');
+			objects.money_sack_cont.visible=true;
+			objects.money_sack_title.text=this.money_in_sack+'$';
+			my_data.money+=this.money_in_sack;	
+			firebase.database().ref('players/'+my_data.uid+'/money').set(my_data.money);
+			this.money_in_sack=0;
+		}
+		
+		//располагаем карточки инструментов
+		const inst_xy=[[0,0],[70,0],[0,70],[70,70],[0,140],[70,140],[0,210],[70,210]];
+		for (let i=0;i<my_data.inst.length;i++){
+			const inst_id=my_data.inst[i];
+			const inst_name=inst_data[inst_id].name;
+			objects.inst_cards[i].visible=true;
+			objects.inst_cards[i].pic.texture=gres[inst_name].texture;
+			objects.inst_cards[i].x=inst_xy[i][0];
+			objects.inst_cards[i].y=inst_xy[i][1];
+			objects.inst_cards[i].name=inst_name;
+		}
 		
 		//загружаем первые аватары
 		for (i=0;i<cards_num;i++)			
@@ -1863,6 +2094,7 @@ play_menu={
 			await this.shift_up();		
 		
 		sound.play('note1');
+		anim2.add(objects.inst_cont,{x:[-100, objects.inst_cont.sx]}, true, 0.5,'easeOutCubic');
 		anim2.add(objects.up_button,{y:[-100, objects.up_button.sy]}, true, 0.5,'easeOutCubic');
 		anim2.add(objects.down_button,{x:[900, objects.down_button.sx]}, true, 0.5,'easeOutCubic');
 		anim2.add(objects.back_button,{x:[-100, objects.back_button.sx]}, true, 0.5,'easeOutCubic');
@@ -1886,6 +2118,18 @@ play_menu={
 			sound.play('locked2');
 			return;				
 		}
+		
+		
+		const inst_name=songs_data[this.cur_song_id].inst;
+		if (inst_name!==''){			
+			const inst_id=inst_data.findIndex(inst=>inst.name===inst_name);
+			const inst_name_rus=inst_data[inst_id].name_rus;
+			if (my_data.inst.includes(inst_id)===false){
+				message.add('Вам нужен инструмент: '+inst_name_rus);
+				return;
+			}			
+		}		
+		
 
 		sound.play('click');
 		this.close();
@@ -1986,8 +2230,18 @@ play_menu={
 		
 	},
 	
+	inst_down(){		
+		
+		objects.inst_frame.x=this.x;
+		objects.inst_frame.y=this.y;
+		objects.inst_frame.visible=true;
+		play_menu.instrument=this.name;
+		sound.play('click');
+	},
+	
 	close(){
 		
+		objects.inst_cont.visible=false;
 		objects.songs_cards_cont.visible=false;
 		objects.arrow_icon.visible=false;
 		objects.start_button.visible=false;
@@ -2164,6 +2418,8 @@ async function init_game_env(lang) {
 	
 	//определяем рейтинг
 	my_data.rating = (other_data && other_data.rating) || 0;
+	my_data.money=(other_data && other_data.money) || 0;
+	my_data.inst=(other_data && other_data.inst) || [0];
 	play_menu.cur_song_id=my_data.rating;
 
 	//убираем лупу
@@ -2176,7 +2432,7 @@ async function init_game_env(lang) {
 	objects.id_rating.text=my_data.rating;
 
 	//обновляем данные в файербейс так как могли поменяться имя или фото
-	firebase.database().ref("players/"+my_data.uid).set({name:my_data.name, pic_url: my_data.pic_url, rating : my_data.rating, tm:firebase.database.ServerValue.TIMESTAMP});
+	firebase.database().ref("players/"+my_data.uid).set({name:my_data.name, pic_url: my_data.pic_url, rating : my_data.rating, money : my_data.money, inst : my_data.inst, tm:firebase.database.ServerValue.TIMESTAMP});
 
 
 	//это событие когда меняется видимость приложения
