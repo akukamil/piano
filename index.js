@@ -2057,7 +2057,7 @@ play_menu={
 			const inst_name=inst_data[inst_id].name;
 			objects.inst_cards[i].visible=true;
 			objects.inst_cards[i].pic.texture=gres[inst_name].texture;
-			objects.inst_cards[i].x=20+inst_xy[i][0];
+			objects.inst_cards[i].x=inst_xy[i][0];
 			objects.inst_cards[i].y=inst_xy[i][1];
 			objects.inst_cards[i].name=inst_name;
 		}
