@@ -1377,8 +1377,10 @@ ad={
 			return false;
 		this.prv_show = Date.now();
 		
-		await Promise.all([dialog.show('ad_break'), this.show()])
-		
+		if (game_platform==='YANDEX')
+			await this.show();
+		else
+			await Promise.all([dialog.show('ad_break'), this.show()])
 
 	},
 	
