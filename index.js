@@ -996,6 +996,7 @@ game={
 		this.unique_notes={};
 		let all_unique_notes={};
 		
+		
 		//жизни
 		this.life=5;
 		if(play_menu.cur_song_id>5)
