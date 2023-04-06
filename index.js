@@ -12,7 +12,7 @@ inst_data=[{name:'acoustic_grand_piano',price:0,name_rus:'Акустически
 				{name:'music_box',price:27000,name_rus:'Музыкальная шкатулка'},
 				{name:'flute',price:28000,name_rus:'Флейта'},
 				{name:'pan_flute',price:29000,name_rus:'Флейта Пана'},
-				{name:'vibraphone',price:40000,name_rus:'Вибрафон'},
+				{name:'vibraphone',price:40000,name_rus:'Виброфон'},
 				{name:'electric_guitar_jazz',price:65000,name_rus:'Электрогитара джаз'}];
 
 class song_card_class extends PIXI.Container{
