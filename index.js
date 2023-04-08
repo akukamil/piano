@@ -1078,7 +1078,7 @@ game={
 			this.notes_loader[play_menu.instrument]=new PIXI.Loader();
 		for (let note of Object.keys(all_unique_notes)){
 			if (this.notes_loader[play_menu.instrument].resources['M'+note]===undefined)
-				this.notes_loader[play_menu.instrument].add('M'+note,`instruments/edited/${play_menu.instrument}/`+this.midi_number_to_name[note]+'.mp3');			
+				this.notes_loader[play_menu.instrument].add('M'+note,git_src+`instruments/edited/${play_menu.instrument}/`+this.midi_number_to_name[note]+'.mp3');			
 			
 		}
 
