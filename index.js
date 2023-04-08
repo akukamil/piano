@@ -2184,7 +2184,7 @@ play_menu={
 		const bot_song_id=this.bottom_card.song_id;
 		const abs_top_y=objects.songs_cards_cont.y+this.top_card.y;
 		
-		if(bot_song_id>0) {
+		if(bot_song_id>0  && abs_top_y<-100) {
 			
 			this.top_card.y=this.bottom_card.y+70;
 			this.top_card.set(bot_song_id-1);
