@@ -6,14 +6,21 @@ var avatar_loader;
 var speed=0.95;
 const pix_per_tm=125;
 
-inst_data=[{name:'acoustic_grand_piano',price:0,name_rus:'Акустический рояль'},
-				{name:'electric_piano',price:10000,name_rus:'Электронное пианино'},
-				{name:'acoustic_guitar_steel',price:15000,name_rus:'Акустическая гитара'},
-				{name:'music_box',price:27000,name_rus:'Музыкальная шкатулка'},
-				{name:'flute',price:28000,name_rus:'Флейта'},
-				{name:'pan_flute',price:29000,name_rus:'Флейта Пана'},
-				{name:'vibraphone',price:40000,name_rus:'Виброфон'},
-				{name:'electric_guitar_jazz',price:65000,name_rus:'Электрогитара джаз'}];
+shop_data=[{name:'acoustic_grand_piano',price:0,name_rus:'Акустический рояль',type:'inst'},
+				{name:'electric_piano',price:10000,name_rus:'Электронное пианино',type:'inst'},
+				{name:'acoustic_guitar_steel',price:15000,name_rus:'Акустическая гитара',type:'inst'},
+				{name:'music_box',price:27000,name_rus:'Музыкальная шкатулка',type:'inst'},
+				{name:'flute',price:28000,name_rus:'Флейта',type:'inst'},
+				{name:'pan_flute',price:29000,name_rus:'Флейта Пана',type:'inst'},
+				{name:'vibraphone',price:40000,name_rus:'Виброфон',type:'inst'},
+				{name:'electric_guitar_jazz',price:65000,name_rus:'Электрогитара джаз',type:'inst'},
+				{name:'slow5',price:1000,name_rus:'Уменьшить скорость на 5% (на одну игру)',type:'slow_bonus'},
+				{name:'slow10',price:2000,name_rus:'Уменьшить скорость на 10% (на одну игру)',type:'slow_bonus'},
+				{name:'slow15',price:3000,name_rus:'Уменьшить скорость на 15% (на одну игру)',type:'slow_bonus'},
+				{name:'slow20',price:4000,name_rus:'Уменьшить скорость на 20% (на одну игру)',type:'slow_bonus'},
+				{name:'slow25',price:5000,name_rus:'Уменьшить скорость на 25% (на одну игру)',type:'slow_bonus'},
+				{name:'life2',price:3000,name_rus:'Еще 2 жизни (на одну игру)',type:'life_bonus'},
+				{name:'life4',price:5000,name_rus:'Еще 4 жизни (на одну игру)',type:'life_bonus'}];
 
 class song_card_class extends PIXI.Container{
 		
@@ -990,7 +997,7 @@ game={
 				
 		objects.load_notice.visible=true;
 		const midi_file_id=songs_data[play_menu.cur_song_id].file_name;
-		speed=songs_data[play_menu.cur_song_id].speed;
+		speed=+songs_data[play_menu.cur_song_id].speed;
 		const midi = await Midi.fromUrl(git_src+'/new_midi/'+midi_file_id+'.mid');
 		
 		this.unique_notes={};
@@ -1007,6 +1014,26 @@ game={
 			this.life=2;
 		if(play_menu.cur_song_id>20)
 			this.life=1;
+		
+		//бонусы жизни
+		if (shop.life_bonus==='life2')
+			this.life+=2;
+		if (shop.life_bonus==='life4')
+			this.life+=4;
+		if (this.life>5)
+			this.life=5;
+		
+		
+		
+		//бонусы замедления
+		if (shop.slow_bonus==='slow5') speed=speed-speed*0.05;
+		if (shop.slow_bonus==='slow10') speed=speed-speed*0.10;
+		if (shop.slow_bonus==='slow15') speed=speed-speed*0.15;
+		if (shop.slow_bonus==='slow20') speed=speed-speed*0.2;
+		if (shop.slow_bonus==='slow25') speed=speed-speed*0.25;
+		
+		objects.bonuses.visible=true;
+		objects.bonuses.text=shop.life_bonus + ' ' +shop.slow_bonus
 		
 		for (let i=0;i<5;i++){
 			if (i<this.life)
@@ -1226,6 +1253,10 @@ game={
 	},
 	
 	close(){
+		
+		shop.life_bonus='';
+		shop.slow_bonus='';
+		objects.bonuses.visible=false;
 		
 		some_process.game=function(){};
 		objects.piano_keys_cont.visible=false;
@@ -1850,7 +1881,9 @@ language_dialog={
 shop={
 	
 
-	cur_inst:0,
+	cur_bonus:0,
+	life_bonus:'',
+	slow_bonus:'',
 	
 	activate(){
 		
@@ -1861,9 +1894,9 @@ shop={
 	
 	update(){
 		
-		objects.shop_inst_pic.texture=gres[inst_data[this.cur_inst].name].texture;
-		objects.shop_inst_name.text=inst_data[this.cur_inst].name_rus;
-		objects.shop_inst_price.text=inst_data[this.cur_inst].price +'$';
+		objects.shop_inst_pic.texture=gres[shop_data[this.cur_bonus].name].texture;
+		objects.shop_inst_name.text=shop_data[this.cur_bonus].name_rus;
+		objects.shop_inst_price.text=shop_data[this.cur_bonus].price +'$';
 		objects.shop_money.text=my_data.money +'$';
 	},
 	
@@ -1879,7 +1912,7 @@ shop={
 			return;				
 		}
 		
-		if (this.cur_inst===0) {
+		if (this.cur_bonus===0) {
 			sound.play('locked2');
 			return;
 		}
@@ -1887,7 +1920,7 @@ shop={
 		
 		
 		sound.play('click');
-		this.cur_inst--;
+		this.cur_bonus--;
 		this.update();
 		
 	},
@@ -1899,13 +1932,13 @@ shop={
 			return;				
 		}
 		
-		if (this.cur_inst===inst_data.length-1){
+		if (this.cur_bonus===shop_data.length-1){
 			sound.play('locked2');
 			return;
 		}
 		
 		sound.play('click');
-		this.cur_inst++;
+		this.cur_bonus++;
 		this.update();
 	},
 	
@@ -1922,35 +1955,53 @@ shop={
 		
 	},	
 	
-	buy_inst_down(){
+	buy_down(){
 		
 		if(anim2.any_on()){
 			sound.play('locked2');
 			return;				
 		}
 		
-		const price=inst_data[this.cur_inst].price;
-		const name_rus=inst_data[this.cur_inst].name_rus;
+		const price=shop_data[this.cur_bonus].price;
+		const name_rus=shop_data[this.cur_bonus].name_rus;
 		
 		if (my_data.money<price){
-			message.add('У вас нет денег чтобы купить этот инструмент');
+			message.add('У вас нет денег для покупки');
 			sound.play('locked2');
 			return;		
 		}
 		
-		if (my_data.inst.includes(this.cur_inst)){
-			message.add('Этот инструмент уже у вас есть');
+		if (shop_data[this.cur_bonus].type==='inst' && my_data.inst.includes(this.cur_bonus)){
+			message.add('Инструмент уже куплен');
 			sound.play('locked2');
 			return;			
 		}
 		
+		if (shop_data[this.cur_bonus].name===this.life_bonus || shop_data[this.cur_bonus].name===this.slow_bonus){
+			message.add('Бонус уже куплен');
+			sound.play('locked2');
+			return;			
+		}
+		
+		
 		my_data.money-=price;
+		firebase.database().ref('players/'+my_data.uid+'/money').set(my_data.money);
 		this.update();
 		
 		sound.play('click');
-		my_data.inst.push(this.cur_inst);
-		firebase.database().ref('players/'+my_data.uid+'/money').set(my_data.money);
-		firebase.database().ref('players/'+my_data.uid+'/inst').set(my_data.inst);
+				
+		if (shop_data[this.cur_bonus].type==='inst'){
+			my_data.inst.push(this.cur_bonus);
+			firebase.database().ref('players/'+my_data.uid+'/inst').set(my_data.inst);			
+		}
+		
+		if (shop_data[this.cur_bonus].type==='life_bonus')
+			this.life_bonus=shop_data[this.cur_bonus].name	
+
+		if (shop_data[this.cur_bonus].type==='slow_bonus')
+			this.slow_bonus=shop_data[this.cur_bonus].name	
+		
+		
 		sound.play('money');
 		message.add('Куплено! ('+name_rus+')');
 		
@@ -2023,7 +2074,7 @@ play_menu={
 	top_card:null,
 	bottom_card:null,
 	cur_song_id:3,
-	cur_inst:0,
+	cur_bonus:0,
 	instrument:'acoustic_grand_piano',
 	money_in_sack:0,
 	
@@ -2057,7 +2108,7 @@ play_menu={
 		const inst_xy=[[0,0],[70,0],[0,70],[70,70],[0,140],[70,140],[0,210],[70,210]];
 		for (let i=0;i<my_data.inst.length;i++){
 			const inst_id=my_data.inst[i];
-			const inst_name=inst_data[inst_id].name;
+			const inst_name=shop_data[inst_id].name;
 			objects.inst_cards[i].visible=true;
 			objects.inst_cards[i].pic.texture=gres[inst_name].texture;
 			objects.inst_cards[i].x=inst_xy[i][0];
@@ -2125,8 +2176,8 @@ play_menu={
 		
 		const inst_name=songs_data[this.cur_song_id].inst;
 		if (inst_name!==''){			
-			const inst_id=inst_data.findIndex(inst=>inst.name===inst_name);
-			const inst_name_rus=inst_data[inst_id].name_rus;
+			const inst_id=shop_data.findIndex(inst=>inst.name===inst_name);
+			const inst_name_rus=shop_data[inst_id].name_rus;
 			if (my_data.inst.includes(inst_id)===false){
 				message.add('Вам нужен инструмент: '+inst_name_rus);
 				return;
