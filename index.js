@@ -2518,7 +2518,7 @@ function main_loop() {
 	now = Date.now();
 	elapsed = now-then;
 
-	if (elapsed > 10) {
+	if (elapsed > 15) {
 		
 		game_tick+=0.016666666;
 		
@@ -2526,7 +2526,8 @@ function main_loop() {
 		for (let key in some_process)
 			some_process[key]();	
 		
-		anim2.process();		
+		anim2.process();
+		then=Date.now();
 	}
 
 	app.renderer.render(app.stage);		
