@@ -2518,7 +2518,7 @@ function main_loop() {
 	now = Date.now();
 	elapsed = now-then;
 
-	if (elapsed > 15) {
+	if (elapsed > 14) {
 		
 		game_tick+=0.016666666;
 		
