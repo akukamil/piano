@@ -4,7 +4,9 @@ var any_dialog_active=0, some_process = {}, game_platform='';
 var my_data={opp_id : ''},opp_data={};
 var avatar_loader;
 var speed=0.95;
+var notes_loader={};
 const pix_per_tm=125;
+const midi_number_to_name={21:'A0',22:'Bb0',23:'B0',24:'C1',25:'Db1',26:'D1',27:'Eb1',28:'E1',29:'F1',30:'Gb1',31:'G1',32:'Ab1',33:'A1',34:'Bb1',35:'B1',36:'C2',37:'Db2',38:'D2',39:'Eb2',40:'E2',41:'F2',42:'Gb2',43:'G2',44:'Ab2',45:'A2',46:'Bb2',47:'B2',48:'C3',49:'Db3',50:'D3',51:'Eb3',52:'E3',53:'F3',54:'Gb3',55:'G3',56:'Ab3',57:'A3',58:'Bb3',59:'B3',60:'C4',61:'Db4',62:'D4',63:'Eb4',64:'E4',65:'F4',66:'Gb4',67:'G4',68:'Ab4',69:'A4',70:'Bb4',71:'B4',72:'C5',73:'Db5',74:'D5',75:'Eb5',76:'E5',77:'F5',78:'Gb5',79:'G5',80:'Ab5',81:'A5',82:'Bb5',83:'B5',84:'C6',85:'Db6',86:'D6',87:'Eb6',88:'E6',89:'F6',90:'Gb6',91:'G6',92:'Ab6',93:'A6',94:'Bb6',95:'B6',96:'C7',97:'Db7',98:'D7',99:'Eb7',100:'E7',101:'F7',102:'Gb7',103:'G7',104:'Ab7',105:'A7',106:'Bb7',107:'B7',108:'C8'}
 
 shop_data=[{name:'acoustic_grand_piano',price:0,name_rus:'Акустический рояль',type:'inst'},
 				{name:'electric_piano',price:10000,name_rus:'Электронное пианино',type:'inst'},
@@ -166,6 +168,33 @@ class inst_card_class extends PIXI.Container{
 	}
 	
 	
+}
+
+class vpiano_player_card extends PIXI.Container{
+		
+	constructor(){
+		super();
+		
+		this.bcg=new PIXI.Sprite(game_res.resources.vpiano_player_card_bcg.texture);
+		this.bcg.width = 180;
+		this.bcg.height = 40;
+		
+		this.note=new PIXI.Sprite(game_res.resources.note_img.texture);
+		this.note.width = 40;
+		this.note.height = 40;
+		this.note.x=-40;
+		this.note.visible=false;
+		
+		this.name=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 15,align: 'center'});
+		this.name.tint=0x111111;
+		this.name.x=20;
+		this.name.y=20;
+		this.name.anchor.set(0,0.5);
+
+		this.addChild(this.note, this.bcg, this.name);
+		
+	}
+		
 }
 
 var message =  {
@@ -974,14 +1003,213 @@ make_text=function (obj, text, max_width) {
 	obj.text =  text;
 }
 
+virtual_piano={
+	
+	vkeys_data:[[60,4,46.823,285.333,445.333],[62,50.824,93.647,285.333,445.333],[64,97.647,140.471,285.333,445.333],[65,144.471,187.294,285.333,445.333],[67,191.294,234.118,285.333,445.333],[69,238.118,280.941,285.333,445.333],[71,284.941,327.765,285.333,445.333],[72,331.765,374.588,285.333,445.333],[74,378.588,421.412,285.333,445.333],[76,425.412,468.235,285.333,445.333],[77,472.236,515.059,285.333,445.333],[79,519.059,561.882,285.333,445.333],[81,565.882,608.706,285.333,445.333],[83,612.706,655.529,285.333,445.333],[84,659.53,702.353,285.333,445.333],[86,706.353,749.176,285.333,445.333],[88,753.177,796,285.333,445.333],[61,32.157,65.49,285.333,373.245],[63,78.98,112.314,285.333,373.245],[66,172.627,205.961,285.333,373.245],[68,219.451,252.784,285.333,373.245],[70,266.275,299.608,285.333,373.245],[73,359.922,393.255,285.333,373.245],[75,406.745,440.078,285.333,373.245],[78,500.392,533.725,285.333,373.245],[80,547.216,580.549,285.333,373.245],[82,594.039,627.373,285.333,373.245],[85,687.686,721.02,285.333,373.245],[87,734.51,767.843,285.333,373.245]],
+
+	instrument:'acoustic_grand_piano',
+	last_note_time:0,
+	my_song:{name:'111',notes:[]},
+	notes_to_play_buffer:[],
+	fb_time:0,
+	
+	async activate(){
+		
+		
+		//получаем время файербейс
+		let snapshot=await firebase.database().ref('time').once('value');
+		this.fb_time=snapshot.val();
+
+
+		objects.load_notice.visible=true;		
+		objects.pianists_cont.visible=true;
+		objects.vpiano_back_button.visible=true;
+		
+		//подгружаем ноты которые будут играть и звучать
+		if(notes_loader[play_menu.instrument]===undefined)
+			notes_loader[play_menu.instrument]=new PIXI.Loader();
+		
+		for (let key_data of this.vkeys_data){		
+			const midi_number=key_data[0];
+			if (notes_loader[virtual_piano.instrument].resources['M'+midi_number]===undefined)
+				notes_loader[virtual_piano.instrument].add('M'+midi_number,git_src+`instruments/edited/${virtual_piano.instrument}/`+midi_number_to_name[midi_number]+'.mp3');			
+		}
+		
+		await new Promise(resolve=>notes_loader[play_menu.instrument].load(resolve));
+		objects.load_notice.visible=false;
+				
+		objects.bcg.interactive=true;
+		objects.bcg.pointerdown=virtual_piano.key_down.bind(this);
+		
+		anim2.add(objects.vpiano_w,{x:[-800,objects.vpiano_w.sx]}, true, 1.5,'easeOutBack');	
+		anim2.add(objects.vpiano_b,{x:[800,objects.vpiano_b.sx]}, true, 1.5,'easeOutBack');	
+		
+		firebase.database().ref('vpiano/players/'+my_data.uid+'/tm').set(firebase.database.ServerValue.TIMESTAMP);
+		firebase.database().ref('vpiano/notes').on('value',(snapshot) => {virtual_piano.new_notes(snapshot.val())});
+		firebase.database().ref('vpiano/players').on('value',(snapshot) => {virtual_piano.players_change(snapshot.val())});
+		firebase.database().ref('vpiano/players/'+my_data.uid).onDisconnect().remove();
+		some_process.vpiano=this.process.bind(this);
+		
+		this.my_song.name=my_data.name;
+		
+	},
+	
+	back_button_down(){
+		
+		this.close();
+		main_menu.activate();
+		
+	},
+	
+	new_notes(data){		
+
+		if (data.notes.length>0 && data.name!==my_data.name) {			
+			const first_note_time=data.notes[0][1];
+			const d=Date.now()-first_note_time;
+			data.notes.forEach(note=>{				
+				virtual_piano.notes_to_play_buffer.push([note[0],d+note[1]+500,data.name])				
+			})			
+		}
+		
+	},
+	
+	stringToColor(str) {
+		let hash = 0;
+		for (let i = 0; i < str.length; i++) {
+		hash = str.charCodeAt(i) + ((hash << 5) - hash);
+		}
+		let color = '0x';
+		for (let i = 0; i < 2; i++) {
+			let value = (hash >> (i * 8)) & 0xFF;
+			color += ('00' + value.toString(16)).substr(-2);
+		}
+		return color+'ff';
+	},
+	
+	players_change(data){
+		
+		let cnt=0;
+		for (let name of Object.keys(data)){
+			
+			if (data[name].tm>virtual_piano.fb_time-500000)
+			objects.pianists[cnt].visible=true;
+			objects.pianists[cnt].name.text=name;
+			objects.pianists[cnt].bcg.tint=virtual_piano.stringToColor(name);
+			
+			cnt++;
+		}		
+		
+	},
+		
+	show_playing_player(name){
+		
+		objects.pianists.forEach(p=>{
+			if (p.visible && p.name.text===name){
+					
+				
+				anim2.add(p.note,{alpha:[1, 0]},false,0.5,'linear');	
+				return;
+			}			
+		})
+		
+		
+	},
+	
+	process(){
+		
+		if (this.my_song.notes.length>0 && (Date.now()-this.last_note_time)>3000)
+			this.send_notes();
+		
+		if (this.my_song.notes.length>20)
+			this.send_notes();
+		
+		if (this.notes_to_play_buffer.length>0){
+			
+			//это первая нота с временем
+			const note_data=this.notes_to_play_buffer[0];
+						
+			if (Date.now()>note_data[1]){			
+			
+				sound.play('M'+note_data[0],notes_loader[this.instrument].resources);
+				this.show_playing_player(note_data[2]);
+				const note_data2 = this.vkeys_data.find(element => element[0]===note_data[0]);
+				this.highlight_key(note_data2);
+				this.notes_to_play_buffer.shift();
+			}			
+		}
+	},
+	
+	send_notes(){		
+		console.log('notes_sent')
+		firebase.database().ref('vpiano/notes').set(this.my_song);
+		this.my_song.notes=[];
+	},
+	
+	key_down(e){
+		
+		//координаты указателя
+		const mx = e.data.global.x/app.stage.scale.x;
+		const my = e.data.global.y/app.stage.scale.y;
+		
+		let note_to_play_data=null;
+		for (let vkey of this.vkeys_data){
+			if (mx>=vkey[1] && mx<=vkey[2] && my>=vkey[3]&&my<=vkey[4])
+				note_to_play_data=vkey;			
+		}
+
+			
+		if (note_to_play_data){
+			
+			sound.play('M'+note_to_play_data[0],notes_loader[this.instrument].resources)
+			
+			this.highlight_key(note_to_play_data)
+		
+			this.my_song.notes.push([note_to_play_data[0],Date.now()]);
+			this.last_note_time=Date.now();
+		}
+		
+	},
+	
+	highlight_key(note){
+		
+		if ([61,63,66,68,70,73,75,78,80,82,85,87].includes(note[0])){
+			objects.vpiano_hl_b.x=note[1]-10;
+			objects.vpiano_hl_b.y=note[3]-10;
+			anim2.add(objects.vpiano_hl_b,{alpha:[1,0]}, false, 0.5,'linear');				
+		}
+
+		else {
+			objects.vpiano_hl_w.x=note[1]-10;
+			objects.vpiano_hl_w.y=note[3]-10;
+			anim2.add(objects.vpiano_hl_w,{alpha:[1,0]}, false, 0.5,'linear');				
+		}
+		
+	},
+	
+	close(){
+		
+		some_process.vpiano=function(){};
+		objects.pianists_cont.visible=false;
+		objects.vpiano_back_button.visible=false;
+		objects.vpiano_w.visible=false;
+		objects.vpiano_b.visible=false;
+		
+		firebase.database().ref('vpiano/players/'+my_data.uid).remove();
+		firebase.database().ref('vpiano/notes').off();
+		firebase.database().ref('vpiano/players').off();
+		
+	}
+	
+	
+	
+}
+
 game={	
 	
-	midi_number_to_name:{21:'A0',22:'Bb0',23:'B0',24:'C1',25:'Db1',26:'D1',27:'Eb1',28:'E1',29:'F1',30:'Gb1',31:'G1',32:'Ab1',33:'A1',34:'Bb1',35:'B1',36:'C2',37:'Db2',38:'D2',39:'Eb2',40:'E2',41:'F2',42:'Gb2',43:'G2',44:'Ab2',45:'A2',46:'Bb2',47:'B2',48:'C3',49:'Db3',50:'D3',51:'Eb3',52:'E3',53:'F3',54:'Gb3',55:'G3',56:'Ab3',57:'A3',58:'Bb3',59:'B3',60:'C4',61:'Db4',62:'D4',63:'Eb4',64:'E4',65:'F4',66:'Gb4',67:'G4',68:'Ab4',69:'A4',70:'Bb4',71:'B4',72:'C5',73:'Db5',74:'D5',75:'Eb5',76:'E5',77:'F5',78:'Gb5',79:'G5',80:'Ab5',81:'A5',82:'Bb5',83:'B5',84:'C6',85:'Db6',86:'D6',87:'Eb6',88:'E6',89:'F6',90:'Gb6',91:'G6',92:'Ab6',93:'A6',94:'Bb6',95:'B6',96:'C7',97:'Db7',98:'D7',99:'Eb7',100:'E7',101:'F7',102:'Gb7',103:'G7',104:'Ab7',105:'A7',106:'Bb7',107:'B7',108:'C8'},
 	main_notes:[],
 	bass_notes:[],	
 	all_notes:[],
 	song_id:0,
-	notes_loader:{},
 	audio_buffers :[],
 	play_start:0,
 	life:3,
@@ -1101,16 +1329,16 @@ game={
 		
 		
 		//подгружаем ноты которые будут играть и звучать
-		if(this.notes_loader[play_menu.instrument]===undefined)
-			this.notes_loader[play_menu.instrument]=new PIXI.Loader();
+		if(notes_loader[play_menu.instrument]===undefined)
+			notes_loader[play_menu.instrument]=new PIXI.Loader();
 		for (let note of Object.keys(all_unique_notes)){
-			if (this.notes_loader[play_menu.instrument].resources['M'+note]===undefined)
-				this.notes_loader[play_menu.instrument].add('M'+note,git_src+`instruments/edited/${play_menu.instrument}/`+this.midi_number_to_name[note]+'.mp3');			
+			if (notes_loader[play_menu.instrument].resources['M'+note]===undefined)
+				notes_loader[play_menu.instrument].add('M'+note,git_src+`instruments/edited/${play_menu.instrument}/`+midi_number_to_name[note]+'.mp3');			
 			
 		}
 
 		
-		await new Promise(resolve=>this.notes_loader[play_menu.instrument].load(resolve));
+		await new Promise(resolve=>notes_loader[play_menu.instrument].load(resolve));
 		objects.load_notice.visible=false;
 		
 		anim2.add(objects.piano_keys_cont,{y:[600, 0]}, true, 0.5,'easeOutCubic');
@@ -1164,7 +1392,7 @@ game={
 		//это источник звука
 		var source = audio_context.createBufferSource();
 		
-		source.buffer = this.notes_loader[play_menu.instrument].resources[midi_number].sound.media.buffer;			
+		source.buffer = notes_loader[play_menu.instrument].resources[midi_number].sound.media.buffer;			
 		source.connect(audio_context.destination);			
 					
 		/*source.gainNode = audio_context.createGain();
@@ -1195,7 +1423,7 @@ game={
 		objects.piano_key_press.x=this.x;
 		anim2.add(objects.piano_key_press,{alpha:[1, 0]},false,1,'linear',false);
 		//game.play_note('M'+this.midi,1);
-		sound.play('M'+this.midi,game.notes_loader[play_menu.instrument].resources)
+		sound.play('M'+this.midi,notes_loader[play_menu.instrument].resources)
 		
 		
 		let close_notes={};
@@ -1327,7 +1555,7 @@ game={
 			const dt=note_time-cur_sec;
 			const pos_y=300-dt*100;			
 			if(pos_y>=300 && note.played===false){				
-				sound.play('M'+note_midi,this.notes_loader[play_menu.instrument].resources);					
+				sound.play('M'+note_midi,notes_loader[play_menu.instrument].resources);					
 				note.played=true;					
 			}
 		}	
@@ -1819,7 +2047,7 @@ async function load_resources() {
 	document.getElementById("m_progress").style.display = 'flex';
 
 	git_src="https://akukamil.github.io/piano/"
-	//git_src=""
+	git_src=""
 
 	//подпапка с ресурсами
 	let lang_pack = ['RUS','ENG'][0];
@@ -2020,6 +2248,7 @@ main_menu={
 		anim2.add(objects.lb_button,{x:[900, objects.lb_button.sx],alpha:[0,1]}, true, 1,'linear',false);
 		anim2.add(objects.rules_button,{y:[500, objects.rules_button.sy],alpha:[0,1]}, true, 1,'linear',false);
 		anim2.add(objects.shop_button,{y:[500, objects.shop_button.sy],alpha:[0,1]}, true, 1,'linear',false);
+		anim2.add(objects.vpiano_button,{x:[800, objects.vpiano_button.sx],alpha:[0,1]}, true, 1,'linear',false);
 	},
 	
 	play_button_down(){
@@ -2057,6 +2286,20 @@ main_menu={
 		shop.activate();		
 	},
 		
+	vpiano_button_down(){
+		
+		if(anim2.any_on()){
+			sound.play('locked2');
+			return;				
+		}
+		
+		sound.play('click');
+		this.close();
+		virtual_piano.activate();
+		
+		
+	},
+		
 	close(){
 		
 		anim2.add(objects.game_title,{y:[objects.game_title.sy,-100]}, false, 1,'linear',false);
@@ -2064,6 +2307,7 @@ main_menu={
 		anim2.add(objects.lb_button,{x:[objects.lb_button.sx,900]}, false, 1,'linear',false);
 		anim2.add(objects.rules_button,{y:[objects.rules_button.sy,500]}, false, 1,'linear',false);
 		anim2.add(objects.shop_button,{y:[objects.shop_button.y,500],alpha:[1,0]}, false, 1,'linear',false);
+		anim2.add(objects.vpiano_button,{x:[objects.vpiano_button.x,800],alpha:[1,0]}, false, 1,'linear',false);
 	}
 		
 }
@@ -2488,6 +2732,8 @@ async function init_game_env(lang) {
 	//обновляем данные в файербейс так как могли поменяться имя или фото
 	firebase.database().ref("players/"+my_data.uid).set({name:my_data.name, pic_url: my_data.pic_url, rating : my_data.rating, money : my_data.money, inst : my_data.inst, tm:firebase.database.ServerValue.TIMESTAMP});
 
+	//заносим время в файербейс
+	firebase.database().ref('time').set(firebase.database.ServerValue.TIMESTAMP);
 
 	//это событие когда меняется видимость приложения
 	document.addEventListener("visibilitychange", vis_change);
