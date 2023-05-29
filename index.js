@@ -1044,7 +1044,7 @@ virtual_piano={
 		anim2.add(objects.vpiano_w,{x:[-800,objects.vpiano_w.sx]}, true, 1.5,'easeOutBack');	
 		anim2.add(objects.vpiano_b,{x:[800,objects.vpiano_b.sx]}, true, 1.5,'easeOutBack');	
 		
-		firebase.database().ref('vpiano/players/'+my_data.uid+'/tm').set(firebase.database.ServerValue.TIMESTAMP);
+		firebase.database().ref('vpiano/players/'+my_data.name+'/tm').set(firebase.database.ServerValue.TIMESTAMP);
 		firebase.database().ref('vpiano/notes').on('value',(snapshot) => {virtual_piano.new_notes(snapshot.val())});
 		firebase.database().ref('vpiano/players').on('value',(snapshot) => {virtual_piano.players_change(snapshot.val())});
 		firebase.database().ref('vpiano/players/'+my_data.uid).onDisconnect().remove();
