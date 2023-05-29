@@ -1091,12 +1091,13 @@ virtual_piano={
 		let cnt=0;
 		for (let name of Object.keys(data)){
 			
-			if (data[name].tm>virtual_piano.fb_time-500000)
-			objects.pianists[cnt].visible=true;
-			objects.pianists[cnt].name.text=name;
-			objects.pianists[cnt].bcg.tint=virtual_piano.stringToColor(name);
-			
-			cnt++;
+			if (data[name].tm>virtual_piano.fb_time-500000) {
+				objects.pianists[cnt].visible=true;
+				objects.pianists[cnt].name.text=name;
+				objects.pianists[cnt].bcg.tint=virtual_piano.stringToColor(name);				
+				cnt++;				
+			}
+
 		}		
 		
 	},
@@ -1160,12 +1161,11 @@ virtual_piano={
 			
 		if (note_to_play_data){
 			
-			sound.play('M'+note_to_play_data[0],notes_loader[this.instrument].resources)
-			
-			this.highlight_key(note_to_play_data)
-		
+			sound.play('M'+note_to_play_data[0],notes_loader[this.instrument].resources)			
+			this.highlight_key(note_to_play_data)		
 			this.my_song.notes.push([note_to_play_data[0],Date.now()]);
 			this.last_note_time=Date.now();
+			this.show_playing_player(my_data.name);
 		}
 		
 	},
