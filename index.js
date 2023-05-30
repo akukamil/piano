@@ -1118,10 +1118,10 @@ virtual_piano={
 	
 	process(){
 		
-		if (this.my_song.notes.length>0 && (Date.now()-this.last_note_time)>2000)
+		if (this.my_song.notes.length>0 && (Date.now()-this.last_note_time)>1500)
 			this.send_notes();
 		
-		if (this.my_song.notes.length>20)
+		if (this.my_song.notes.length>25)
 			this.send_notes();
 		
 		if (Date.now()-this.presence_update_time>5000){
