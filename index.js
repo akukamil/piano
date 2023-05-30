@@ -1005,13 +1005,13 @@ make_text=function (obj, text, max_width) {
 
 virtual_piano={
 	
-	vkeys_data:[[60,4,46.823,285.333,445.333],[62,50.824,93.647,285.333,445.333],[64,97.647,140.471,285.333,445.333],[65,144.471,187.294,285.333,445.333],[67,191.294,234.118,285.333,445.333],[69,238.118,280.941,285.333,445.333],[71,284.941,327.765,285.333,445.333],[72,331.765,374.588,285.333,445.333],[74,378.588,421.412,285.333,445.333],[76,425.412,468.235,285.333,445.333],[77,472.236,515.059,285.333,445.333],[79,519.059,561.882,285.333,445.333],[81,565.882,608.706,285.333,445.333],[83,612.706,655.529,285.333,445.333],[84,659.53,702.353,285.333,445.333],[86,706.353,749.176,285.333,445.333],[88,753.177,796,285.333,445.333],[61,32.157,65.49,285.333,373.245],[63,78.98,112.314,285.333,373.245],[66,172.627,205.961,285.333,373.245],[68,219.451,252.784,285.333,373.245],[70,266.275,299.608,285.333,373.245],[73,359.922,393.255,285.333,373.245],[75,406.745,440.078,285.333,373.245],[78,500.392,533.725,285.333,373.245],[80,547.216,580.549,285.333,373.245],[82,594.039,627.373,285.333,373.245],[85,687.686,721.02,285.333,373.245],[87,734.51,767.843,285.333,373.245]],
-
+	vkeys_data:[[60,4,46.823,285.333,445.333,0],[62,50.824,93.647,285.333,445.333,0],[64,97.647,140.471,285.333,445.333,0],[65,144.471,187.294,285.333,445.333,0],[67,191.294,234.118,285.333,445.333,0],[69,238.118,280.941,285.333,445.333,0],[71,284.941,327.765,285.333,445.333,0],[72,331.765,374.588,285.333,445.333,0],[74,378.588,421.412,285.333,445.333,0],[76,425.412,468.235,285.333,445.333,0],[77,472.236,515.059,285.333,445.333,0],[79,519.059,561.882,285.333,445.333,0],[81,565.882,608.706,285.333,445.333,0],[83,612.706,655.529,285.333,445.333,0],[84,659.53,702.353,285.333,445.333,0],[86,706.353,749.176,285.333,445.333,0],[88,753.177,796,285.333,445.333,0],[61,32.157,65.49,285.333,373.245,1],[63,78.98,112.314,285.333,373.245,1],[66,172.627,205.961,285.333,373.245,1],[68,219.451,252.784,285.333,373.245,1],[70,266.275,299.608,285.333,373.245,1],[73,359.922,393.255,285.333,373.245,1],[75,406.745,440.078,285.333,373.245,1],[78,500.392,533.725,285.333,373.245,1],[80,547.216,580.549,285.333,373.245,1],[82,594.039,627.373,285.333,373.245,1],[85,687.686,721.02,285.333,373.245,1],[87,734.51,767.843,285.333,373.245,1]],
 	instrument:'acoustic_grand_piano',
 	last_note_time:0,
 	my_song:{name:'111',notes:[]},
 	notes_to_play_buffer:[],
 	fb_time:0,
+	presence_update_time:0,
 	
 	async activate(){
 		
@@ -1021,9 +1021,8 @@ virtual_piano={
 		this.fb_time=snapshot.val();
 
 
-		objects.load_notice.visible=true;		
-		objects.pianists_cont.visible=true;
-		objects.vpiano_back_button.visible=true;
+		objects.vpiano_cont.visible=true;		
+
 		
 		//подгружаем ноты которые будут играть и звучать
 		if(notes_loader[play_menu.instrument]===undefined)
@@ -1050,6 +1049,7 @@ virtual_piano={
 		firebase.database().ref('vpiano/players/'+my_data.uid).onDisconnect().remove();
 		some_process.vpiano=this.process.bind(this);
 		
+		this.presence_update_time=Date.now();
 		this.my_song.name=my_data.name;
 		
 	},
@@ -1091,7 +1091,7 @@ virtual_piano={
 		let cnt=0;
 		for (let name of Object.keys(data)){
 			
-			if (data[name].tm>virtual_piano.fb_time-500000) {
+			if (data[name].tm>virtual_piano.fb_time-100000) {
 				objects.pianists[cnt].visible=true;
 				objects.pianists[cnt].name.text=name;
 				objects.pianists[cnt].bcg.tint=virtual_piano.stringToColor(name);				
@@ -1118,11 +1118,17 @@ virtual_piano={
 	
 	process(){
 		
-		if (this.my_song.notes.length>0 && (Date.now()-this.last_note_time)>3000)
+		if (this.my_song.notes.length>0 && (Date.now()-this.last_note_time)>2000)
 			this.send_notes();
 		
 		if (this.my_song.notes.length>20)
 			this.send_notes();
+		
+		if (Date.now()-this.presence_update_time>5000){
+			this.presence_update_time=Date.now();
+			firebase.database().ref('vpiano/players/'+my_data.name+'/tm').set(firebase.database.ServerValue.TIMESTAMP);
+		}
+			
 		
 		if (this.notes_to_play_buffer.length>0){
 			
@@ -1172,27 +1178,29 @@ virtual_piano={
 	
 	highlight_key(note){
 		
-		if ([61,63,66,68,70,73,75,78,80,82,85,87].includes(note[0])){
-			objects.vpiano_hl_b.x=note[1]-10;
-			objects.vpiano_hl_b.y=note[3]-10;
-			anim2.add(objects.vpiano_hl_b,{alpha:[1,0]}, false, 0.5,'linear');				
-		}
-
-		else {
-			objects.vpiano_hl_w.x=note[1]-10;
-			objects.vpiano_hl_w.y=note[3]-10;
-			anim2.add(objects.vpiano_hl_w,{alpha:[1,0]}, false, 0.5,'linear');				
-		}
+		let tar_hl=[];
 		
+		if (note[5]===0)
+			tar_hl=objects.w_hl
+		else
+			tar_hl=objects.b_hl
+			
+		//получаем свободную ноту для хайлайта
+		for(let hl of tar_hl){
+			
+			if (hl.visible===false){
+				hl.x=note[1]-10;
+				hl.y=note[3]-10;			
+				anim2.add(hl,{alpha:[1,0]}, false, 0.5,'linear');						
+				return;
+			}			
+		}			
 	},
 	
 	close(){
 		
 		some_process.vpiano=function(){};
-		objects.pianists_cont.visible=false;
-		objects.vpiano_back_button.visible=false;
-		objects.vpiano_w.visible=false;
-		objects.vpiano_b.visible=false;
+		objects.vpiano_cont.visible=false;
 		
 		firebase.database().ref('vpiano/players/'+my_data.uid).remove();
 		firebase.database().ref('vpiano/notes').off();
