@@ -1359,7 +1359,7 @@ game={
 		if(my_data.rating===0) await dialog.show('rules');
 		
 		//3 доп секунды до первой ноты
-		this.play_start=game_tick-first_note_time/speed+3;
+		this.play_start=Date.now()*0.001-first_note_time/speed+3;
 		this.on=true;
 		some_process.game=this.process.bind(game);
 	},
@@ -1425,8 +1425,9 @@ game={
 		
 		if(!game.on) return;
 		if(!this.visible) return;
+		const tm_sec=Date.now()*0.001;
 		
-		const cur_sec=(game_tick-game.play_start)*speed;
+		const cur_sec=(tm_sec-game.play_start)*speed;
 		
 		objects.piano_key_press.x=this.x;
 		anim2.add(objects.piano_key_press,{alpha:[1, 0]},false,1,'linear',false);
@@ -1553,7 +1554,8 @@ game={
 			
 	process(){
 				
-		const cur_sec=(game_tick-this.play_start)*speed;
+		const tm_sec=Date.now()*0.001;
+		const cur_sec=(tm_sec-this.play_start)*speed;
 				
 		//это басы
 		for(let k=0;k<this.bass_notes.length;k++){
@@ -2766,23 +2768,17 @@ async function init_game_env(lang) {
 
 }
 
-var now, then=Date.now(), elapsed;
 function main_loop() {
 
-	now = Date.now();
-	elapsed = now-then;
 
-	if (elapsed > 14) {
-		
-		game_tick+=0.016666666;
-		
-		//обрабатываем минипроцессы
-		for (let key in some_process)
-			some_process[key]();	
-		
-		anim2.process();
-		then=Date.now();
-	}
+
+	game_tick+=0.016666666;
+	
+	//обрабатываем минипроцессы
+	for (let key in some_process)
+		some_process[key]();	
+	
+	anim2.process();
 
 	app.renderer.render(app.stage);		
 	requestAnimationFrame(main_loop);	
