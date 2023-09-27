@@ -251,7 +251,7 @@ anim2={
 	c5: (2 * Math.PI) / 4.5,
 	empty_spr : {x:0,visible:false,ready:true, alpha:0},
 		
-	slot: [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+	slot: [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
 	
 	any_on : function() {
 		
@@ -1617,6 +1617,8 @@ game={
 			if(pos_y<500)
 				no_notes=false;
 		}
+		
+
 		
 		//это обработка падающих нот-спрайтов
 		for(let k=0;k<objects.falling_notes.length;k++){
