@@ -251,7 +251,7 @@ anim2={
 	c5: (2 * Math.PI) / 4.5,
 	empty_spr : {x:0,visible:false,ready:true, alpha:0},
 		
-	slot: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+	slot: [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
 	
 	any_on : function() {
 		
@@ -1421,6 +1421,39 @@ game={
 		}, 3000);
 	},
 	
+	add_sparks(key, d){
+		
+		let sparks_num=0;
+		const angles=[0,0.1,0.2,0.3]
+		
+		if (d<0.07)	sparks_num=3
+		if (d<0.06)	sparks_num=4
+		if (d<0.05)	sparks_num=5
+		if (d<0.04)	sparks_num=6
+		if (d<0.03)	sparks_num=7
+		if (d<0.02) sparks_num=8
+		if (d<0.01) sparks_num=9
+		
+		const sx=key.x+key.width/2;
+		const sy=300;		
+			
+		const sparks = objects.sparks.filter(s=>!s.visible);
+		
+		for (let i=0;i<Math.min(sparks_num,sparks.length);i++){
+			
+			const spark=sparks[i];
+			const rand_and=Math.random()*2-1;
+			const dist=50+Math.random()*300;
+			const tx=sx+Math.sin(rand_and)*dist;
+			const ty=sy-Math.cos(rand_and)*dist;
+			spark.tint=0xffffff*(0.5+Math.random()*0.5);
+			anim2.add(spark,{x:[sx,tx],y:[sy,ty],alpha:[0.75,0],scale_xy:[0.5,1.5]},false,2,'easeOutCubic');	
+			
+		}
+	
+		
+	},
+	
 	touch_down(){
 		
 		if(!game.on) return;
@@ -1434,24 +1467,25 @@ game={
 		//game.play_note('M'+this.midi,1);
 		sound.play('M'+this.midi,notes_loader[play_menu.instrument].resources)
 		
-		
+		//выявляем на какие ноты это могло быть нажато
 		let close_notes={};
 		for(let k=0;k<objects.falling_notes.length;k++){
 			const note = objects.falling_notes[k];
 			const note_time = note.time;
 			const note_midi = note.midi;
 			const d=Math.abs(note_time-cur_sec);
-			if(note.catched===false&&note_midi===this.midi&&d<0.25)
-				close_notes[k]=d;
+			if(!note.catched&&note_midi===this.midi&&d<0.25)			
+				close_notes[k]=d;				
 		}	
 		
-		//если нажали какую-то ноту близкую
+		//если нажали какую-то ноту близкую то выявляем самую близкую
 		if (Object.keys(close_notes).length>0) {
 			let min_note_ind = Object.keys(close_notes).reduce((key, v) => close_notes[v] < close_notes[key] ? v : key);			
 			
 			const fnote=objects.falling_notes[+min_note_ind];
+			//console.log('PROGRESS: ',close_notes[min_note_ind])
+			game.add_sparks(this,close_notes[min_note_ind]);
 			fnote.catched=true;
-			fnote.finished=true;
 			play_menu.money_in_sack++;
 			fnote.texture=gres.falling_note_ok_img.texture;			
 			anim2.add(fnote,{scale_xy:[fnote.scale_xy, fnote.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
@@ -1465,9 +1499,7 @@ game={
 		objects.taps_left.text=game.notes_in_song;
 		
 		if(game.notes_in_song===0)
-			game.stop();
-
-		
+			game.stop();		
 		
 	},
 	
@@ -1543,7 +1575,7 @@ game={
 				note.catched=false;
 				note.tint=0xffffff;	
 				note.texture=gres.falling_note_img.texture;		
-				console.log('добавлена нота')
+				//console.log('добавлена нота')
 				return;
 			}			
 		}
@@ -1557,7 +1589,7 @@ game={
 		const tm_sec=Date.now()*0.001;
 		const cur_sec=(tm_sec-this.play_start)*speed;
 				
-		//это басы
+		//это басы они играют сами по себе
 		for(let k=0;k<this.bass_notes.length;k++){
 			const note = this.bass_notes[k];
 			const note_time = note.time;
@@ -1581,14 +1613,12 @@ game={
 			if (!note.added&&pos_y>-50){			
 				this.add_falling_note(note_midi, note_time,k);
 				note.added=true;
-			}
-			
+			}			
 			if(pos_y<500)
 				no_notes=false;
 		}
 		
 		//это обработка падающих нот-спрайтов
-
 		for(let k=0;k<objects.falling_notes.length;k++){
 
 			const visible=objects.falling_notes[k].visible;
@@ -1597,22 +1627,20 @@ game={
 				const sprite_note = objects.falling_notes[k];
 				const note_time = sprite_note.time;
 				const note_midi = sprite_note.midi;
-				const dt=note_time-cur_sec;
-				const pos_y=300-dt*pix_per_tm;
+				const dt=cur_sec-note_time;
+				const pos_y=300+dt*pix_per_tm;
 				
-				if(!sprite_note.catched&&pos_y>300&&sprite_note.y<=300) sprite_note.tint=0xff0000;				
+				//отмечаем запоздалую ноту
+				if(!sprite_note.catched&&pos_y>300) sprite_note.tint=0xff0000;				
 							
-				if(dt<-0.25&&!sprite_note.finished) {
+							
+				if(dt>0.25&&!sprite_note.catched) {
 					
-					if (sprite_note.catched){
-						
-						
-					} else {
-						game.decrease_life();
-						sprite_note.texture=gres.falling_note_no_img.texture;	
-						anim2.add(sprite_note,{scale_xy:[sprite_note.scale_xy, sprite_note.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
-					}
-					sprite_note.finished=true;
+					sprite_note.catched=true;
+					game.decrease_life();
+					sprite_note.texture=gres.falling_note_no_img.texture;	
+					anim2.add(sprite_note,{scale_xy:[sprite_note.scale_xy, sprite_note.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
+
 				}				
 
 				sprite_note.y=pos_y;					
