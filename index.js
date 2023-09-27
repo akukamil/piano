@@ -1424,14 +1424,11 @@ game={
 	add_sparks(key, d){
 		
 		let sparks_num=0;
-		const angles=[0,0.1,0.2,0.3]
-		
-		if (d<0.07)	sparks_num=3
-		if (d<0.06)	sparks_num=4
-		if (d<0.05)	sparks_num=5
-		if (d<0.04)	sparks_num=6
-		if (d<0.03)	sparks_num=7
-		if (d<0.02) sparks_num=8
+
+
+		if (d<0.04)	sparks_num=3
+		if (d<0.03)	sparks_num=5
+		if (d<0.02) sparks_num=7
 		if (d<0.01) sparks_num=9
 		
 		const sx=key.x+key.width/2;
