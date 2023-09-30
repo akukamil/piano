@@ -9,20 +9,20 @@ const pix_per_tm=125;
 const midi_number_to_name={21:'A0',22:'Bb0',23:'B0',24:'C1',25:'Db1',26:'D1',27:'Eb1',28:'E1',29:'F1',30:'Gb1',31:'G1',32:'Ab1',33:'A1',34:'Bb1',35:'B1',36:'C2',37:'Db2',38:'D2',39:'Eb2',40:'E2',41:'F2',42:'Gb2',43:'G2',44:'Ab2',45:'A2',46:'Bb2',47:'B2',48:'C3',49:'Db3',50:'D3',51:'Eb3',52:'E3',53:'F3',54:'Gb3',55:'G3',56:'Ab3',57:'A3',58:'Bb3',59:'B3',60:'C4',61:'Db4',62:'D4',63:'Eb4',64:'E4',65:'F4',66:'Gb4',67:'G4',68:'Ab4',69:'A4',70:'Bb4',71:'B4',72:'C5',73:'Db5',74:'D5',75:'Eb5',76:'E5',77:'F5',78:'Gb5',79:'G5',80:'Ab5',81:'A5',82:'Bb5',83:'B5',84:'C6',85:'Db6',86:'D6',87:'Eb6',88:'E6',89:'F6',90:'Gb6',91:'G6',92:'Ab6',93:'A6',94:'Bb6',95:'B6',96:'C7',97:'Db7',98:'D7',99:'Eb7',100:'E7',101:'F7',102:'Gb7',103:'G7',104:'Ab7',105:'A7',106:'Bb7',107:'B7',108:'C8'}
 
 shop_data=[{name:'acoustic_grand_piano',price:0,name_rus:'Акустический рояль',type:'inst'},
-				{name:'electric_piano',price:5000,name_rus:'Электронное пианино',type:'inst'},
-				{name:'acoustic_guitar_steel',price:15000,name_rus:'Акустическая гитара',type:'inst'},
-				{name:'music_box',price:18000,name_rus:'Музыкальная шкатулка',type:'inst'},
-				{name:'flute',price:21000,name_rus:'Флейта',type:'inst'},
-				{name:'pan_flute',price:23000,name_rus:'Флейта Пана',type:'inst'},
-				{name:'vibraphone',price:27000,name_rus:'Виброфон',type:'inst'},
-				{name:'electric_guitar_jazz',price:30000,name_rus:'Электрогитара джаз',type:'inst'},
-				{name:'slow5',price:1000,name_rus:'Уменьшить скорость на 5% (на одну игру)',type:'slow_bonus'},
-				{name:'slow10',price:2000,name_rus:'Уменьшить скорость на 10% (на одну игру)',type:'slow_bonus'},
-				{name:'slow15',price:3000,name_rus:'Уменьшить скорость на 15% (на одну игру)',type:'slow_bonus'},
-				{name:'slow20',price:4000,name_rus:'Уменьшить скорость на 20% (на одну игру)',type:'slow_bonus'},
-				{name:'slow25',price:5000,name_rus:'Уменьшить скорость на 25% (на одну игру)',type:'slow_bonus'},
-				{name:'life2',price:3000,name_rus:'Еще 2 жизни (на одну игру)',type:'life_bonus'},
-				{name:'life4',price:5000,name_rus:'Еще 4 жизни (на одну игру)',type:'life_bonus'}];
+				{name:'electric_piano',price:1000,name_rus:'Электронное пианино',type:'inst'},
+				{name:'acoustic_guitar_steel',price:2000,name_rus:'Акустическая гитара',type:'inst'},
+				{name:'music_box',price:3000,name_rus:'Музыкальная шкатулка',type:'inst'},
+				{name:'flute',price:4000,name_rus:'Флейта',type:'inst'},
+				{name:'pan_flute',price:5000,name_rus:'Флейта Пана',type:'inst'},
+				{name:'vibraphone',price:6000,name_rus:'Виброфон',type:'inst'},
+				{name:'electric_guitar_jazz',price:7000,name_rus:'Электрогитара джаз',type:'inst'},
+				{name:'slow5',price:100,name_rus:'Уменьшить скорость на 5% (на одну игру)',type:'slow_bonus'},
+				{name:'slow10',price:200,name_rus:'Уменьшить скорость на 10% (на одну игру)',type:'slow_bonus'},
+				{name:'slow15',price:300,name_rus:'Уменьшить скорость на 15% (на одну игру)',type:'slow_bonus'},
+				{name:'slow20',price:400,name_rus:'Уменьшить скорость на 20% (на одну игру)',type:'slow_bonus'},
+				{name:'slow25',price:500,name_rus:'Уменьшить скорость на 25% (на одну игру)',type:'slow_bonus'},
+				{name:'life2',price:300,name_rus:'Еще 2 жизни (на одну игру)',type:'life_bonus'},
+				{name:'life4',price:500,name_rus:'Еще 4 жизни (на одну игру)',type:'life_bonus'}];
 
 class song_card_class extends PIXI.Container{
 		
