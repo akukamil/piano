@@ -1,11 +1,12 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app ={stage:{},renderer:{}}, game_res, objects={}, game_tick=0,audio_context, my_turn=false, room_name = '', LANG = 0, git_src;
+var app ={stage:{},renderer:{}},fbs, game_res, objects={}, game_tick=0,audio_context, my_turn=false, room_name = '', LANG = 0, git_src;
 var any_dialog_active=0, some_process = {}, game_platform='';
 var my_data={opp_id : ''},opp_data={};
 var avatar_loader;
 var speed=0.95;
 var notes_loader={};
 const pix_per_tm=125;
+const PIANO_LINE_Y=281;
 const midi_number_to_name={21:'A0',22:'Bb0',23:'B0',24:'C1',25:'Db1',26:'D1',27:'Eb1',28:'E1',29:'F1',30:'Gb1',31:'G1',32:'Ab1',33:'A1',34:'Bb1',35:'B1',36:'C2',37:'Db2',38:'D2',39:'Eb2',40:'E2',41:'F2',42:'Gb2',43:'G2',44:'Ab2',45:'A2',46:'Bb2',47:'B2',48:'C3',49:'Db3',50:'D3',51:'Eb3',52:'E3',53:'F3',54:'Gb3',55:'G3',56:'Ab3',57:'A3',58:'Bb3',59:'B3',60:'C4',61:'Db4',62:'D4',63:'Eb4',64:'E4',65:'F4',66:'Gb4',67:'G4',68:'Ab4',69:'A4',70:'Bb4',71:'B4',72:'C5',73:'Db5',74:'D5',75:'Eb5',76:'E5',77:'F5',78:'Gb5',79:'G5',80:'Ab5',81:'A5',82:'Bb5',83:'B5',84:'C6',85:'Db6',86:'D6',87:'Eb6',88:'E6',89:'F6',90:'Gb6',91:'G6',92:'Ab6',93:'A6',94:'Bb6',95:'B6',96:'C7',97:'Db7',98:'D7',99:'Eb7',100:'E7',101:'F7',102:'Gb7',103:'G7',104:'Ab7',105:'A7',106:'Bb7',107:'B7',108:'C8'}
 
 shop_data=[{name:'acoustic_grand_piano',price:0,name_rus:'Акустический рояль',type:'inst'},
@@ -117,25 +118,24 @@ class lb_player_card_class extends PIXI.Container{
 		this.bcg.height = 70;
 
 		this.place=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
-		this.place.tint=0xffff00;
+		this.place.tint=0xffffff;
 		this.place.x=20;
 		this.place.y=22;
 
 		this.avatar=new PIXI.Sprite();
 		this.avatar.x=43;
-		this.avatar.y=10;
-		this.avatar.width=this.avatar.height=48;
+		this.avatar.y=14;
+		this.avatar.width=this.avatar.height=44;
 
 
 		this.name=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
-		this.name.tint=0xdddddd;
+		this.name.tint=0xcceeff;
 		this.name.x=105;
 		this.name.y=22;
 
-
 		this.rating=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
 		this.rating.x=298;
-		this.rating.tint=0xffddff;
+		this.rating.tint=0xFFFF00;
 		this.rating.y=22;
 
 		this.addChild(this.bcg,this.place, this.avatar, this.name, this.rating);
@@ -1037,8 +1037,8 @@ virtual_piano={
 		await new Promise(resolve=>notes_loader[play_menu.instrument].load(resolve));
 		objects.load_notice.visible=false;
 				
-		objects.bcg.interactive=true;
-		objects.bcg.pointerdown=virtual_piano.key_down.bind(this);
+		objects.desktop.interactive=true;
+		objects.desktop.pointerdown=virtual_piano.key_down.bind(this);
 		
 		anim2.add(objects.vpiano_w,{x:[-800,objects.vpiano_w.sx]}, true, 1.5,'easeOutBack');	
 		anim2.add(objects.vpiano_b,{x:[800,objects.vpiano_b.sx]}, true, 1.5,'easeOutBack');	
@@ -1224,7 +1224,7 @@ game={
 	on:false,
 	notes_in_song:0,
 	touches_cnt:0,
-	piano_key_width:0,
+	piano_key_step_x:0,
 	unique_notes:{},
 	
 	async activate() {		
@@ -1235,6 +1235,7 @@ game={
 		const midi_file_id=songs_data[play_menu.cur_song_id].file_name;
 		speed=+songs_data[play_menu.cur_song_id].speed;
 		const midi = await Midi.fromUrl(git_src+'/new_midi/'+midi_file_id+'.mid');
+				
 		
 		this.unique_notes={};
 		let all_unique_notes={};
@@ -1296,23 +1297,52 @@ game={
 		
 		//считаем количество нот
 		const unique_notes_arr=Object.keys(this.unique_notes);
-		const unique_notes_num=unique_notes_arr.length;	
+		const unique_notes_num=unique_notes_arr.length;
+		let white_spacing=20;
+		if (unique_notes_num>=0&&unique_notes_num<10)
+			white_spacing=10;
+		if (unique_notes_num>=10&&unique_notes_num<15)
+			white_spacing=7;
+		if (unique_notes_num>=15&&unique_notes_num<30)
+			white_spacing=4;
+		
+		
+		const keys_overlap=30-white_spacing;
+		
+		const start_shift_x=white_spacing-10;
+		const end_shift_x=20-white_spacing;
+		
+		const num_of_overlaps=unique_notes_num-1;
+		const total_overlap_len=num_of_overlaps*keys_overlap;
+		
 		
 		//располагаем клавиши на экране
-		this.piano_key_width=800/unique_notes_num;
+		const adj_width=800-start_shift_x+end_shift_x;
+		const piano_key_width=(adj_width+total_overlap_len)/unique_notes_num;
+		
+		//расставляем клавиши
+		const step_x=piano_key_width-keys_overlap;
+		this.piano_key_step_x=step_x;
+		
 		objects.piano_keys.forEach(key=>key.visible=false);
+		objects.piano_keys_press.forEach(key=>key.visible=false);
 		for(let k=0;k<unique_notes_num;k++){
-			objects.piano_keys[k].texture=gres['piano_key'+unique_notes_num].texture;
-			objects.piano_keys[k].visible=true;
+			const key=objects.piano_keys[k];
 			
-			objects.piano_keys[k].width=this.piano_key_width;
-			objects.piano_keys[k].height=210;
-			objects.piano_keys[k].x=k*this.piano_key_width;		
-			objects.piano_keys[k].midi=+unique_notes_arr[k];	
+			key.visible=true;
+			
+			objects.piano_keys[k].width=piano_key_width;
+			objects.piano_keys[k].height=180;
+			objects.piano_keys[k].x=start_shift_x+k*step_x;
+			objects.piano_keys[k].midi=+unique_notes_arr[k];			
+			
+			objects.piano_keys_press[k].width=piano_key_width;
+			objects.piano_keys_press[k].height=180;
+			objects.piano_keys_press[k].x=k*step_x;
 		}
 		
 		//это подсветка нажатой клавиши
-		objects.piano_key_press.width=this.piano_key_width;
+		//objects.piano_key_press.width=this.piano_key_width;
 		
 		//добавляем порядок ноты по возрастанию
 		let ind = 0;
@@ -1440,7 +1470,7 @@ game={
 			
 			const spark=sparks[i];
 			const rand_and=Math.random()*2-1;
-			const dist=50+Math.random()*300;
+			const dist=50+Math.random()*PIANO_LINE_Y;
 			const tx=sx+Math.sin(rand_and)*dist;
 			const ty=sy-Math.cos(rand_and)*dist;
 			spark.tint=0xffffff*(0.5+Math.random()*0.5);
@@ -1459,9 +1489,12 @@ game={
 		
 		const cur_sec=(tm_sec-game.play_start)*speed;
 		
-		objects.piano_key_press.x=this.x;
-		anim2.add(objects.piano_key_press,{alpha:[1, 0]},false,1,'linear',false);
-		//game.play_note('M'+this.midi,1);
+		//подсвечиваем нажатую клавишу
+		const cur_press_hl=objects.piano_keys_press[this.id];
+		cur_press_hl.x=this.x;
+		anim2.add(cur_press_hl,{alpha:[1, 0]},false,1,'linear',false);
+
+
 		sound.play('M'+this.midi,notes_loader[play_menu.instrument].resources)
 		
 		//выявляем на какие ноты это могло быть нажато
@@ -1562,7 +1595,7 @@ game={
 			if(note.visible===false){				
 				note.time=note_time;
 				note.midi=note_midi;
-				note.x=this.unique_notes[note_midi]*this.piano_key_width+this.piano_key_width*0.5;
+				note.x=this.unique_notes[note_midi]*this.piano_key_step_x+this.piano_key_step_x*0.5;
 				note.visible=true;
 				note.width=50;
 				note.height=50;
@@ -1592,8 +1625,8 @@ game={
 			const note_time = note.time;
 			const note_midi = note.midi;
 			const dt=note_time-cur_sec;
-			const pos_y=300-dt*100;			
-			if(pos_y>=300 && note.played===false){				
+			const pos_y=PIANO_LINE_Y-dt*100;			
+			if(pos_y>=PIANO_LINE_Y && note.played===false){				
 				sound.play('M'+note_midi,notes_loader[play_menu.instrument].resources);					
 				note.played=true;					
 			}
@@ -1606,7 +1639,7 @@ game={
 			const note_time = note.time;
 			const note_midi = note.midi;
 			const dt=note_time-cur_sec;
-			const pos_y=300-dt*pix_per_tm;			
+			const pos_y=PIANO_LINE_Y-dt*pix_per_tm;			
 			if (!note.added&&pos_y>-50){			
 				this.add_falling_note(note_midi, note_time,k);
 				note.added=true;
@@ -1627,10 +1660,10 @@ game={
 				const note_time = sprite_note.time;
 				const note_midi = sprite_note.midi;
 				const dt=cur_sec-note_time;
-				const pos_y=300+dt*pix_per_tm;
+				const pos_y=PIANO_LINE_Y+dt*pix_per_tm;
 				
 				//отмечаем запоздалую ноту
-				if(!sprite_note.catched&&pos_y>300) sprite_note.tint=0xff0000;				
+				if(!sprite_note.catched&&pos_y>PIANO_LINE_Y) sprite_note.tint=0xff0000;				
 							
 							
 				if(dt>0.25&&!sprite_note.catched) {
@@ -1656,6 +1689,34 @@ game={
 		
 	}
 
+}
+
+async function stat_all_songs(){
+	
+	
+	for (let song of songs_data){
+		console.log(song);
+		const midi = await Midi.fromUrl(git_src+'/new_midi/'+song.file_name+'.mid');
+		
+		let main_notes=midi.tracks.filter(t => t.name==='MAIN')[0].notes;
+		let bass_notes=midi.tracks.filter(t => t.name==='BASS')[0].notes;
+		main_notes.forEach(n=>n.track='MAIN');
+		bass_notes.forEach(n=>n.track='BASS');
+		
+		let unique_notes={};
+		
+		for(let note of main_notes) {unique_notes[note.midi]=note.midi;note.catched=false;note.finished=false;note.added=false;};
+		//считаем количество нот
+		const unique_notes_arr=Object.keys(unique_notes);
+		const unique_notes_num=unique_notes_arr.length;	
+		
+		console.log(unique_notes_num);
+		
+	}
+	
+	
+	
+	
 }
 
 keep_alive=function() {
@@ -1756,21 +1817,60 @@ ad={
 	}
 }
 
+players_cache={
+	
+	players:{},
+	
+	async update(uid,params={}){
+				
+		//если игрока нет в кэше то создаем его
+		if (!this.players[uid]) this.players[uid]={}
+							
+		//ссылка на игрока
+		const player=this.players[uid];
+		
+		//заполняем параметры которые дали
+		for (let param in params) player[param]=params[param];
+		
+		if (!player.name) player.name=await fbs_once('players/'+uid+'/name');
+		if (!player.rating) player.rating=await fbs_once('players/'+uid+'/rating');
+	},
+	
+	async update_avatar(uid){
+		
+		const player=this.players[uid];
+		if(!player) alert('Не загружены базовые параметры '+uid);
+		
+		//если текстура уже есть
+		if (player.texture) return;
+		
+		//если нет URL
+		if (!player.pic_url) player.pic_url=await fbs_once('players/'+uid+'/pic_url');
+		
+		if(player.pic_url==='https://vk.com/images/camera_100.png')
+			player.pic_url='https://akukamil.github.io/domino/vk_icon.png';
+		
+		//загружаем и записываем текстуру
+		if (player.pic_url) player.texture=PIXI.Texture.from(player.pic_url);	
+		
+	}	
+}
+
 lb={
 
 	cards_pos: [[370,10],[380,70],[390,130],[380,190],[360,250],[330,310],[290,370]],
+	last_update:0,
 
-	show: function() {
+	show() {
 
-		objects.bcg.texture=game_res.resources.lb_bcg.texture;
-
-		anim2.add(objects.lb_1_cont,{x:[-150,objects.lb_1_cont.sx]},true,0.4,'easeOutBack');
-		anim2.add(objects.lb_2_cont,{x:[-150,objects.lb_2_cont.sx]},true,0.45,'easeOutBack');
-		anim2.add(objects.lb_3_cont,{x:[-150,objects.lb_3_cont.sx]},true,0.5,'easeOutBack');
-		anim2.add(objects.lb_cards_cont,{x:[450,0]},true,0.5,'easeOutCubic');
+		objects.desktop.texture=gres.lb_bcg.texture;
+		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.5,'linear');
 		
-		
-
+		anim2.add(objects.lb_1_cont,{x:[-150, objects.lb_1_cont.sx]}, true, 0.5,'easeOutBack');
+		anim2.add(objects.lb_2_cont,{x:[-150, objects.lb_2_cont.sx]}, true, 0.5,'easeOutBack');
+		anim2.add(objects.lb_3_cont,{x:[-150, objects.lb_3_cont.sx]}, true, 0.5,'easeOutBack');
+		anim2.add(objects.lb_cards_cont,{x:[450, 0]}, true, 0.5,'easeOutCubic');
+				
 		objects.lb_cards_cont.visible=true;
 		objects.lb_back_button.visible=true;
 
@@ -1781,14 +1881,17 @@ lb={
 
 		}
 
+		if (Date.now()-this.last_update>120000){
+			this.update();
+			this.last_update=Date.now();
+		}
 
-		this.update();
 
 	},
 
-	close: function() {
+	close() {
 
-		objects.bcg.texture=game_res.resources.bcg.texture;
+
 		objects.lb_1_cont.visible=false;
 		objects.lb_2_cont.visible=false;
 		objects.lb_3_cont.visible=false;
@@ -1797,9 +1900,9 @@ lb={
 
 	},
 
-	back_button_down: function() {
+	back_button_down() {
 
-		if (any_dialog_active===1 || objects.lb_1_cont.ready===false) {
+		if (anim2.any_on()===true) {
 			sound.play('locked');
 			return
 		};
@@ -1811,70 +1914,55 @@ lb={
 
 	},
 
-	update: function () {
+	async update() {
 
-		firebase.database().ref("players").orderByChild('rating').limitToLast(25).once('value').then((snapshot) => {
+		let leaders=await fbs.ref('players').orderByChild('rating').limitToLast(20).once('value');
+		leaders=leaders.val();
 
-			if (snapshot.val()===null) {
-			  //console.log("Что-то не получилось получить данные о рейтингах");
-			}
-			else {
-
-				var players_array = [];
-				snapshot.forEach(players_data=> {
-					if (players_data.val().name!=="" && players_data.val().name!=='' && players_data.val().name!==undefined)
-						players_array.push([players_data.val().name, players_data.val().rating, players_data.val().pic_url]);
-				});
-
-
-				players_array.sort(function(a, b) {	return b[1] - a[1];});
-
-				//создаем загрузчик топа
-				var loader = new PIXI.Loader();
-
-				var len=Math.min(10,players_array.length);
-
-				//загружаем тройку лучших
-				for (let i=0;i<3;i++) {
-					
-					if (i >= len) break;		
-					if (players_array[i][0] === undefined) break;	
-					
-					let fname = players_array[i][0];
-					make_text(objects['lb_'+(i+1)+'_name'],fname,180);					
-					objects['lb_'+(i+1)+'_rating'].text=players_array[i][1];
-					loader.add('leaders_avatar_'+i, players_array[i][2],{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 3000});
-				};
-
-				//загружаем остальных
-				for (let i=3;i<10;i++) {
-					
-					if (i >= len) break;	
-					if (players_array[i][0] === undefined) break;	
-					
-					let fname=players_array[i][0];
-
-					make_text(objects.lb_cards[i-3].name,fname,180);
-
-					objects.lb_cards[i-3].rating.text=players_array[i][1];
-					loader.add('leaders_avatar_'+i, players_array[i][2],{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE});
-				};
-
-				loader.load();
-
-				//показываем аватар как только он загрузился
-				loader.onProgress.add((loader, resource) => {
-					let lb_num=Number(resource.name.slice(-1));
-					if (lb_num<3)
-						objects['lb_'+(lb_num+1)+'_avatar'].texture=resource.texture
-					else
-						objects.lb_cards[lb_num-3].avatar.texture=resource.texture;
-				});
-
-			}
-
+		const top={
+			0:{t_name:objects.lb_1_name,t_rating:objects.lb_1_rating,avatar:objects.lb_1_avatar},
+			1:{t_name:objects.lb_2_name,t_rating:objects.lb_2_rating,avatar:objects.lb_2_avatar},
+			2:{t_name:objects.lb_3_name,t_rating:objects.lb_3_rating,avatar:objects.lb_3_avatar},			
+		}
+		
+		for (let i=0;i<7;i++){	
+			top[i+3]={};
+			top[i+3].t_name=objects.lb_cards[i].name;
+			top[i+3].t_rating=objects.lb_cards[i].rating;
+			top[i+3].avatar=objects.lb_cards[i].avatar;
+		}		
+		
+		//создаем сортированный массив лидеров
+		const leaders_array=[];
+		Object.keys(leaders).forEach(uid => {
+			
+			const leader_data=leaders[uid];
+			const leader_params={uid,name:leader_data.name, rating:leader_data.rating, pic_url:leader_data.pic_url};
+			leaders_array.push(leader_params);
+			
+			//добавляем в кэш
+			players_cache.update(uid,leader_params);			
 		});
-
+		
+		//сортируем....
+		leaders_array.sort(function(a,b) {return b.rating - a.rating});
+				
+		//заполняем имя и рейтинг
+		for (let place in top){
+			const target=top[place];
+			const leader=leaders_array[place];
+			target.t_name.set2(leader.name,place>2?190:130);
+			target.t_rating.text=leader.rating;			
+		}
+		
+		//заполняем аватар
+		for (let place in top){			
+			const target=top[place];
+			const leader=leaders_array[place];
+			await players_cache.update_avatar(leader.uid);			
+			target.avatar.texture=players_cache.players[leader.uid].texture;		
+		}
+	
 	}
 
 }
@@ -2280,6 +2368,7 @@ main_menu={
 	activate(){
 		
 		sound.play('start');
+		objects.desktop.texture=gres.desktop.texture;
 		anim2.add(objects.game_title,{y:[-100, objects.game_title.sy],alpha:[0,1]}, true, 1,'linear',false);
 		anim2.add(objects.play_button,{x:[-300, objects.play_button.sx],alpha:[0,1]}, true, 1,'linear',false);
 		anim2.add(objects.lb_button,{x:[900, objects.lb_button.sx],alpha:[0,1]}, true, 1,'linear',false);
@@ -2655,6 +2744,17 @@ async function init_game_env(lang) {
 	document.body.appendChild(app.renderer.view).style["boxShadow"] = "0 0 15px #000000";
 	document.body.style.backgroundColor = 'rgb(141,211,200)';
 
+	//доп функция для текста битмап
+	PIXI.BitmapText.prototype.set2=function(text,w){		
+		const t=this.text=text;
+		for (i=t.length;i>=0;i--){
+			this.text=t.substring(0,i)
+			if (this.width<w) return;
+		}	
+	}
+
+
+
 	//запускаем главный цикл
 	main_loop();
 
@@ -2735,6 +2835,9 @@ async function init_game_env(lang) {
 		});
 	}
 
+	//коротко файрбейс
+	fbs=firebase.database();
+
 	//анимация лупы
 	some_process.loup_anim=function() {
 		objects.id_loup.x=20*Math.sin(game_tick*8)+90;
@@ -2742,7 +2845,7 @@ async function init_game_env(lang) {
 	}
 	
 	//ждем пока загрузится аватар
-	let loader=new PIXI.Loader();
+	const loader=new PIXI.Loader();
 	loader.add("my_avatar", my_data.pic_url,{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 5000});			
 	await new Promise((resolve, reject)=> loader.load(resolve))	
 	
