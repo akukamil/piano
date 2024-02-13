@@ -25,6 +25,8 @@ shop_data=[{name:'acoustic_grand_piano',price:0,name_rus:'Акустически
 				{name:'life2',price:300,name_rus:'Еще 2 жизни (на одну игру)',type:'life_bonus'},
 				{name:'life4',price:500,name_rus:'Еще 4 жизни (на одну игру)',type:'life_bonus'}];
 
+const load_queue=[];
+
 class song_card_class extends PIXI.Container{
 		
 	constructor(){
@@ -34,36 +36,41 @@ class song_card_class extends PIXI.Container{
 		this.song_id=0;
 											
 		this.avatar_bcg=new PIXI.Sprite();
-		this.avatar_bcg.width=70;
-		this.avatar_bcg.height=70;	
+		this.avatar_bcg.width=65;
+		this.avatar_bcg.height=65;	
+		this.avatar_bcg.x=25;
+		this.avatar_bcg.y=5;
 				
 		this.avatar=new PIXI.Sprite();
-		this.avatar.x=30;
-		this.avatar.width=70;
-		this.avatar.height=70;
+		this.avatar.width=65;
+		this.avatar.height=65;
+		this.avatar.x=25;
+		this.avatar.y=5;
 		
 		this.avatar_frame=new PIXI.Sprite();
-		this.avatar_frame.width=70;
-		this.avatar_frame.height=70;
+		this.avatar_frame.width=65;
+		this.avatar_frame.height=65;
+		this.avatar_frame.x=25;
+		this.avatar_frame.y=5;
 				
 		this.artist_name=new PIXI.BitmapText('123', {fontName: 'mfont',fontSize: 30}); 
 		this.artist_name.x=120;
 		this.artist_name.y=10;
-		this.artist_name.tint=0x110022;
+		this.artist_name.tint=0xffffff;
 		
 		this.song_name=new PIXI.BitmapText('123', {fontName: 'mfont',fontSize: 25}); 
 		this.song_name.x=120;
 		this.song_name.y=40;
-		this.song_name.tint=0x0000ff;
+		this.song_name.tint=0xaaaaff;
 		
 		this.card_num=new PIXI.BitmapText('1', {fontName: 'mfont',fontSize: 35}); 
 		this.card_num.x=10;
 		this.card_num.y=35;
 		this.card_num.anchor.set(0.5,0.5);
-		this.card_num.tint=0x333333;
+		this.card_num.tint=0x999999;
 		
 		this.bottom_line=new PIXI.Sprite(gres.bottom_line.texture);
-		this.bottom_line.y=70;
+		this.bottom_line.y=75;
 		this.bottom_line.anchor.set(0,0.5);
 		
 		this.lock=new PIXI.Sprite(gres.lock.texture);
@@ -71,8 +78,7 @@ class song_card_class extends PIXI.Container{
 		this.lock.y=35;
 		this.lock.width=60;
 		this.lock.height=60;
-		this.lock.anchor.set(0.5,0.5);
-		
+		this.lock.anchor.set(0.5,0.5);		
 		
 		this.visible=false;
 		this.addChild(this.avatar_bcg,this.avatar,this.avatar_frame,this.artist_name,this.card_num,this.song_name,this.bottom_line,this.lock);
@@ -81,26 +87,23 @@ class song_card_class extends PIXI.Container{
 	
 	async set(song_id){
 			
+		const song_data=songs_data[song_id];
 		this.song_id=song_id;
 		this.visible=true;
-		this.artist_name.text=songs_data[song_id].artist_rus;
-		this.song_name.text=songs_data[song_id].song_rus;
-		const avatar_res=songs_data[song_id].artist_eng;
+		
+		this.artist_eng=song_data.artist_eng;
+		this.artist_name.text=song_data.artist_rus;
+		this.song_name.text=song_data.song_rus;
 		this.avatar.texture=PIXI.Texture.WHITE;
 		this.card_num.text=song_id+1;
 		
-		if(game_platform==='YANDEX' || game_platform==='DEBUG'){
+		/*if(game_platform==='YANDEX' || game_platform==='DEBUG'){
 			this.avatar.texture=gres.avatar_replace.texture;			
 			return;
-		}
-
+		}*/		
 		
-		if (!avatar_loader.resources[avatar_res]){			
-			avatar_loader.add(songs_data[song_id].artist_eng,'artists/'+songs_data[song_id].artist_eng+'.jpg',{timeout: 5000});			
-			await new Promise(resolve=> avatar_loader.load(resolve));
-		}
-		
-		this.avatar.texture=avatar_loader.resources[avatar_res].texture;	
+		//ставим в очередь загрузку аватара и его последующее присвоение
+		play_menu.load_avatar(this);
 	}
 	
 }
@@ -140,7 +143,6 @@ class lb_player_card_class extends PIXI.Container{
 
 		this.addChild(this.bcg,this.place, this.avatar, this.name, this.rating);
 	}
-
 
 }
 
@@ -195,6 +197,42 @@ class vpiano_player_card extends PIXI.Container{
 		
 	}
 		
+}
+
+class spark_class extends PIXI.Sprite{
+	
+	constructor(){
+		
+		super();
+		
+		this.anchor.set(0.5,0.5);
+		this.dx=0;
+		this.dy=0;
+		this.slow_down=0.9;
+		this.velocity=1;
+		this.visible=false;
+		
+	}
+	
+	init(x,y){
+		
+		const ang=Math.random();
+		
+		this.dx=Math.cos(ang);
+		this.dy=Math.sin(ang);
+		this.velocity=1;
+		this.slow_down=0.9;
+	}
+	
+	process(){
+		
+		this.x+=this.dx;
+		this.y+=this.dy;
+		
+		
+	}
+	
+	
 }
 
 var message =  {
@@ -1225,17 +1263,50 @@ game={
 	notes_in_song:0,
 	touches_cnt:0,
 	piano_key_step_x:0,
+	piano_key_width:0,
+	piano_key_start_x:0,
+	active_keys_num:0,
 	unique_notes:{},
+	falling_note_tex:0,
+	render_texture:null,
+	
+	
+	show_render_texture(){
+		
+		const renderTexture = PIXI.RenderTexture.create({ width: 820, height: 190 });
+		
+		const spr=new PIXI.Sprite(gres.money_sack.texture);
+		app.renderer.render(spr, { renderTexture });
+		objects.desktop.texture=renderTexture;
+		
+		
+	},
 	
 	async activate() {		
 	
 		await ad.check_and_show();
-				
+		//play_menu.cur_song_id=43;		
 		objects.load_notice.visible=true;
 		const midi_file_id=songs_data[play_menu.cur_song_id].file_name;
 		speed=+songs_data[play_menu.cur_song_id].speed;
 		const midi = await Midi.fromUrl(git_src+'/new_midi/'+midi_file_id+'.mid');
 				
+		//загружаем дизайн
+		const design_id=songs_data[play_menu.cur_song_id].design_id;
+				
+		if (!gres[`bcg${design_id}`])
+			game_res.add(`bcg${design_id}`,`${git_src}res/ART/bcg${design_id}.jpg`);
+		if (!gres[`piano${design_id}`])
+			game_res.add(`piano${design_id}`,`${git_src}res/ART/piano${design_id}.png`);
+		if (!gres[`falling_note${design_id}`])
+			game_res.add(`falling_note${design_id}`,`${git_src}res/ART/falling_note${design_id}.png`);
+		await new Promise(resolve=> game_res.load(resolve))
+		
+		
+		this.falling_note_tex=gres[`falling_note${design_id}`].texture;
+		objects.desktop.texture=gres[`bcg${design_id}`].texture;
+		objects.piano_bcg.texture=gres[`piano${design_id}`].texture;
+		
 		
 		this.unique_notes={};
 		let all_unique_notes={};
@@ -1243,24 +1314,17 @@ game={
 		
 		//жизни
 		this.life=5;
-		if(play_menu.cur_song_id>5)
-			this.life=4;
-		if(play_menu.cur_song_id>10)
-			this.life=3;
-		if(play_menu.cur_song_id>15)
-			this.life=2;
-		if(play_menu.cur_song_id>20)
-			this.life=1;
+		if(play_menu.cur_song_id>5) this.life=4;
+		if(play_menu.cur_song_id>10) this.life=3;
+		if(play_menu.cur_song_id>15) this.life=2;
+		if(play_menu.cur_song_id>20) this.life=1;
+		
+		this.life=5;
 		
 		//бонусы жизни
-		if (shop.life_bonus==='life2')
-			this.life+=2;
-		if (shop.life_bonus==='life4')
-			this.life+=4;
-		if (this.life>5)
-			this.life=5;
-		
-		
+		if (shop.life_bonus==='life2') this.life+=2;
+		if (shop.life_bonus==='life4') this.life+=4;
+		if (this.life>5) this.life=5;		
 		
 		//бонусы замедления
 		if (shop.slow_bonus==='slow5') speed=speed-speed*0.05;
@@ -1281,10 +1345,10 @@ game={
 		anim2.add(objects.hearts_cont,{y:[-60, objects.hearts_cont.sy]},true,0.4,'linear');
 		
 		//определяем уникальные ноты чтобы только их загрузить (они загрузятся в объект по возрастанию)
-		this.main_notes=midi.tracks.filter(t => t.name==='MAIN')[0].notes;
-		this.bass_notes=midi.tracks.filter(t => t.name==='BASS')[0].notes;
-		this.main_notes.forEach(n=>n.track='MAIN');
-		this.bass_notes.forEach(n=>n.track='BASS');
+		this.main_notes=midi.tracks.find(t => t.name==='Electric Piano').notes;
+		this.bass_notes=midi.tracks.find(t => t.name==='Grand Piano')?.notes||[];
+		this.main_notes.forEach(n=>n.track='Electric Piano');
+		this.bass_notes.forEach(n=>n.track='Grand Piano');
 		
 		this.all_notes=[...this.main_notes,...this.bass_notes];
 		for(let note of this.all_notes) note.played=false;
@@ -1298,27 +1362,32 @@ game={
 		//считаем количество нот
 		const unique_notes_arr=Object.keys(this.unique_notes);
 		const unique_notes_num=unique_notes_arr.length;
-		let white_spacing=20;
+		this.active_keys_num=unique_notes_num;
+
+		const key_params={};
 		if (unique_notes_num>=0&&unique_notes_num<10)
-			white_spacing=10;
+			{key_params.white_spacing=15;key_params.id=1;key_params.tex_side_margin=30}
 		if (unique_notes_num>=10&&unique_notes_num<15)
-			white_spacing=7;
+			{key_params.white_spacing=7;key_params.id=2;key_params.tex_side_margin=20}
 		if (unique_notes_num>=15&&unique_notes_num<30)
-			white_spacing=4;
-		
-		
-		const keys_overlap=30-white_spacing;
+			{key_params.white_spacing=3;key_params.id=3;key_params.tex_side_margin=20}
+
+		//параметры разных размеров
+		const white_spacing=key_params.white_spacing;
+		const keys_overlap=20-white_spacing;
 		
 		const start_shift_x=white_spacing-10;
-		const end_shift_x=20-white_spacing;
+		this.piano_key_start_x=start_shift_x;
+		
+		const end_shift_x=10-white_spacing;
 		
 		const num_of_overlaps=unique_notes_num-1;
 		const total_overlap_len=num_of_overlaps*keys_overlap;
 		
-		
 		//располагаем клавиши на экране
 		const adj_width=800-start_shift_x+end_shift_x;
 		const piano_key_width=(adj_width+total_overlap_len)/unique_notes_num;
+		this.piano_key_width=piano_key_width;
 		
 		//расставляем клавиши
 		const step_x=piano_key_width-keys_overlap;
@@ -1326,23 +1395,46 @@ game={
 		
 		objects.piano_keys.forEach(key=>key.visible=false);
 		objects.piano_keys_press.forEach(key=>key.visible=false);
+		
+		//это маска для фона (рендер текстура)
+		this.render_texture = PIXI.RenderTexture.create({ width: 800, height: 180 });
+		
 		for(let k=0;k<unique_notes_num;k++){
-			const key=objects.piano_keys[k];
+
+			const key_spr=objects.piano_keys[k];
 			
-			key.visible=true;
+			key_spr.visible=true;
+				
+			key_spr.width=piano_key_width;
+			key_spr.height=180;			
+			key_spr.x=start_shift_x+k*step_x;			
+			key_spr.y=270;
+			key_spr.midi=+unique_notes_arr[k];
+			key_spr.texture=gres['key_img'+key_params.id].texture;
+			key_spr.leftWidth=key_spr.rightWidth=key_params.tex_side_margin;
 			
-			objects.piano_keys[k].width=piano_key_width;
-			objects.piano_keys[k].height=180;
-			objects.piano_keys[k].x=start_shift_x+k*step_x;
-			objects.piano_keys[k].midi=+unique_notes_arr[k];			
+			const key_press_spr=objects.piano_keys_press[k];
+			key_press_spr.width=piano_key_width;
+			key_press_spr.height=180;			
+			key_press_spr.x=start_shift_x+k*step_x;			
+			key_press_spr.y=270;
+			key_press_spr.texture=gres['key_press_img'+key_params.id].texture;
+			key_press_spr.leftWidth=key_press_spr.rightWidth=key_params.tex_side_margin;
 			
-			objects.piano_keys_press[k].width=piano_key_width;
-			objects.piano_keys_press[k].height=180;
-			objects.piano_keys_press[k].x=k*step_x;
+			const key_mask=new PIXI.NineSlicePlane(gres['key_mask'+key_params.id].texture,10,0,10,0);
+			key_mask.width=piano_key_width;
+			key_mask.x=key_spr.x;
+			key_mask.y=0;
+			key_mask.height=180;
+			key_mask.leftWidth=key_mask.rightWidth=key_params.tex_side_margin;
+			
+			app.renderer.render(key_mask, {renderTexture:this.render_texture,clear:false});
 		}
 		
-		//это подсветка нажатой клавиши
-		//objects.piano_key_press.width=this.piano_key_width;
+		//делаем маску из рендер текстуры
+		objects.piano_bcg_mask.texture=this.render_texture;
+		objects.piano_bcg.mask=objects.piano_bcg_mask;
+		//objects.desktop.texture=render_texture;
 		
 		//добавляем порядок ноты по возрастанию
 		let ind = 0;
@@ -1362,9 +1454,7 @@ game={
 			f.true_note_index=0;
 			f.catched=false;
 			anim2.kill_anim(f);			
-		})
-
-		
+		})		
 		
 		//подгружаем ноты которые будут играть и звучать
 		if(notes_loader[play_menu.instrument]===undefined)
@@ -1372,7 +1462,6 @@ game={
 		for (let note of Object.keys(all_unique_notes)){
 			if (notes_loader[play_menu.instrument].resources['M'+note]===undefined)
 				notes_loader[play_menu.instrument].add('M'+note,git_src+`instruments/edited/${play_menu.instrument}/`+midi_number_to_name[note]+'.mp3');			
-			
 		}
 
 		
@@ -1381,8 +1470,6 @@ game={
 		
 		anim2.add(objects.piano_keys_cont,{y:[600, 0]}, true, 0.5,'easeOutCubic');
 		objects.falling_notes_cont.visible=true;
-		anim2.add(objects.hand_icon,{y:[-200, objects.hand_icon.sy]}, true, 0.5,'easeOutCubic');
-		anim2.add(objects.taps_left,{y:[-200, objects.taps_left.sy]}, true, 0.5,'easeOutCubic');
 		anim2.add(objects.close_button,{y:[-200, objects.close_button.sy]}, true, 0.5,'easeOutCubic');
 				
 		//показываем инструкцию для новичков
@@ -1392,6 +1479,23 @@ game={
 		this.play_start=Date.now()*0.001-first_note_time/speed+3;
 		this.on=true;
 		some_process.game=this.process.bind(game);
+	},
+	
+	piano_down(e){
+		
+		const key_space_width=800/this.active_keys_num;
+		const px=e.data.global.x/app.stage.scale.x
+		
+		
+		for (let k=0;k<this.active_keys_num;k++){
+			
+			const x_from=key_space_width*k
+			const x_to=key_space_width*(k+1);
+			if (px>x_from&&px<x_to){
+				this.press_key(k);
+				return;
+			}			
+		}		
 	},
 	
 	async restart(){
@@ -1469,33 +1573,34 @@ game={
 		for (let i=0;i<Math.min(sparks_num,sparks.length);i++){
 			
 			const spark=sparks[i];
-			const rand_and=Math.random()*2-1;
-			const dist=50+Math.random()*PIANO_LINE_Y;
-			const tx=sx+Math.sin(rand_and)*dist;
-			const ty=sy-Math.cos(rand_and)*dist;
+			const rand_ang=Math.random()*2-1;
+			spark.x=sx;
+			spark.y=sy;
+			spark.dx=Math.sin(rand_ang);
+			spark.dy=-Math.cos(rand_ang);
+			spark.velocity=Math.random()*3+1;
+			spark.slow_down=0.98;			
 			spark.tint=0xffffff*(0.5+Math.random()*0.5);
-			anim2.add(spark,{x:[sx,tx],y:[sy,ty],alpha:[0.75,0],scale_xy:[0.5,1.5]},false,2,'easeOutCubic');	
+			spark.visible=true;
 			
 		}
 	
 		
 	},
 	
-	touch_down(){
+	press_key(id){
 		
 		if(!game.on) return;
-		if(!this.visible) return;
 		const tm_sec=Date.now()*0.001;
-		
+		const key=objects.piano_keys[id];
 		const cur_sec=(tm_sec-game.play_start)*speed;
 		
 		//подсвечиваем нажатую клавишу
-		const cur_press_hl=objects.piano_keys_press[this.id];
-		cur_press_hl.x=this.x;
+		const cur_press_hl=objects.piano_keys_press[id];
+		cur_press_hl.x=key.x;
 		anim2.add(cur_press_hl,{alpha:[1, 0]},false,1,'linear',false);
 
-
-		sound.play('M'+this.midi,notes_loader[play_menu.instrument].resources)
+		sound.play('M'+key.midi,notes_loader[play_menu.instrument].resources)
 		
 		//выявляем на какие ноты это могло быть нажато
 		let close_notes={};
@@ -1504,32 +1609,30 @@ game={
 			const note_time = note.time;
 			const note_midi = note.midi;
 			const d=Math.abs(note_time-cur_sec);
-			if(!note.catched&&note_midi===this.midi&&d<0.25)			
+			if(!note.catched&&note_midi===key.midi&&d<0.25)			
 				close_notes[k]=d;				
 		}	
 		
 		//если нажали какую-то ноту близкую то выявляем самую близкую
 		if (Object.keys(close_notes).length>0) {
-			let min_note_ind = Object.keys(close_notes).reduce((key, v) => close_notes[v] < close_notes[key] ? v : key);			
+			const min_note_ind = Object.keys(close_notes).reduce((key, v) => close_notes[v] < close_notes[key] ? v : key);			
 			
 			const fnote=objects.falling_notes[+min_note_ind];
 			//console.log('PROGRESS: ',close_notes[min_note_ind])
-			game.add_sparks(this,close_notes[min_note_ind]);
-			fnote.catched=true;
+			game.add_sparks(key,close_notes[min_note_ind]);
+			fnote.catched=key;
 			play_menu.money_in_sack++;
 			fnote.texture=gres.falling_note_ok_img.texture;			
 			anim2.add(fnote,{scale_xy:[fnote.scale_xy, fnote.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
 			
 		}else{
-			sound.play('locked');
+			this.decrease_life();
 		}
-		
-		
-		game.notes_in_song--;
+				
+		//game.notes_in_song--;
 		objects.taps_left.text=game.notes_in_song;
 		
-		if(game.notes_in_song===0)
-			game.stop();		
+		if(game.notes_in_song===0) game.stop();		
 		
 	},
 	
@@ -1544,6 +1647,8 @@ game={
 	},
 		 
 	stop(){
+		
+		if(!this.on) return;
 		
 		this.on=false;
 		sound.play('crowd_whoo');
@@ -1560,15 +1665,12 @@ game={
 		some_process.game=function(){};
 		objects.piano_keys_cont.visible=false;
 		objects.falling_notes_cont.visible=false;
-		objects.hand_icon.visible=false;
 		objects.hearts_cont.visible=false;
-		objects.taps_left.visible=false;
 		objects.close_button.visible=false;
 		this.on=false;
 	},
 	
-	decrease_life(){
-		
+	decrease_life(){		
 
 		this.life--;
 		objects.hearts[this.life].texture=gres.no_heart_img.texture;
@@ -1592,10 +1694,10 @@ game={
 	add_falling_note(note_midi, note_time, note_index){
 		
 		for(let note of objects.falling_notes){
-			if(note.visible===false){				
+			if(!note.visible){				
 				note.time=note_time;
 				note.midi=note_midi;
-				note.x=this.unique_notes[note_midi]*this.piano_key_step_x+this.piano_key_step_x*0.5;
+				note.x=this.piano_key_start_x+this.unique_notes[note_midi]*this.piano_key_step_x+this.piano_key_width*0.5;
 				note.visible=true;
 				note.width=50;
 				note.height=50;
@@ -1604,14 +1706,13 @@ game={
 				note.finished=false;
 				note.catched=false;
 				note.tint=0xffffff;	
-				note.texture=gres.falling_note_img.texture;		
+				note.texture=this.falling_note_tex;		
 				//console.log('добавлена нота')
 				return;
 			}			
 		}
 		alert('Не нашли свободных нот!!!')
-		
-		
+
 	},
 			
 	process(){
@@ -1626,7 +1727,7 @@ game={
 			const note_midi = note.midi;
 			const dt=note_time-cur_sec;
 			const pos_y=PIANO_LINE_Y-dt*100;			
-			if(pos_y>=PIANO_LINE_Y && note.played===false){				
+			if(pos_y>=PIANO_LINE_Y && !note.played){				
 				sound.play('M'+note_midi,notes_loader[play_menu.instrument].resources);					
 				note.played=true;					
 			}
@@ -1644,8 +1745,7 @@ game={
 				this.add_falling_note(note_midi, note_time,k);
 				note.added=true;
 			}			
-			if(pos_y<500)
-				no_notes=false;
+			if(pos_y<500) no_notes=false;
 		}
 		
 
@@ -1673,9 +1773,9 @@ game={
 					sprite_note.texture=gres.falling_note_no_img.texture;	
 					anim2.add(sprite_note,{scale_xy:[sprite_note.scale_xy, sprite_note.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
 
-				}				
+				}
 
-				sprite_note.y=pos_y;					
+				sprite_note.y=pos_y;
 				
 			}
 		
@@ -1686,6 +1786,20 @@ game={
 			this.close();			
 			play_menu.activate('win');			
 		}
+		
+		for (let s=0;s<objects.sparks.length;s++){
+			const spark=objects.sparks[s];
+			if(spark.visible){				
+				
+				spark.x+=spark.dx*spark.velocity
+				spark.y+=spark.dy*spark.velocity
+				spark.velocity*=spark.slow_down;
+				spark.alpha=Math.min(spark.velocity,1);
+
+				if (spark.velocity<0.01) spark.visible=false;
+			}			
+		}
+		
 		
 	}
 
@@ -2156,7 +2270,12 @@ resize=function() {
 
 vis_change=function() {
 
-
+	if (document.hidden){		
+		game.stop();	
+		PIXI.sound.volumeAll=0;	
+	}else{
+		PIXI.sound.volumeAll=1;	
+	}
 		
 }
 
@@ -2201,6 +2320,7 @@ async function load_resources() {
 	await new Promise((resolve, reject)=> game_res.load(resolve))
 	
 	//убираем элементы загрузки
+	game_res.onProgress.detachAll();
 	document.getElementById("m_progress").outerHTML = "";	
 	
 }
@@ -2435,7 +2555,7 @@ play_menu={
 	
 	song_to_play:0,
 	top_card:null,
-	bottom_card:null,
+	bot_card:null,
 	cur_song_id:3,
 	cur_bonus:0,
 	instrument:'acoustic_grand_piano',
@@ -2449,15 +2569,13 @@ play_menu={
 		if(res==='none')
 			await ad.check_and_show();
 		
-		//this.cur_song_id=my_data.rating;
+		this.cur_song_id=my_data.rating;
 		
-		if(!avatar_loader)
-			avatar_loader=new PIXI.Loader();
+		if(!avatar_loader) avatar_loader=new PIXI.Loader();
 				
 		const cards_num=objects.songs_cards.length;
 		
-		if(this.money_in_sack>0){
-			
+		if(this.money_in_sack>0){			
 			anim2.add(objects.money_sack_cont,{x:[-200, 0],scale_x:[0.4,1]},false,3,'easeBridge');
 			sound.play('money');
 			objects.money_sack_cont.visible=true;
@@ -2479,30 +2597,12 @@ play_menu={
 			objects.inst_cards[i].name=inst_name;
 		}
 		
-		//загружаем первые аватары
-		for (i=0;i<cards_num;i++)			
-			if (!avatar_loader.resources[songs_data[i].artist_eng])
-				avatar_loader.add(songs_data[i].artist_eng,'artists/'+songs_data[i].artist_eng+'.jpg');					
-
-		objects.load_notice.visible=true;
-		await new Promise(resolve=> avatar_loader.load(resolve))					
-		for (let i=0;i<cards_num;i++){			
-			const song_id_to_add=this.cur_song_id-1+i;
-			if(song_id_to_add>-1&&song_id_to_add<songs_data.length){
-				objects.songs_cards[i].y=380-i*70;
-				await objects.songs_cards[i].set(song_id_to_add);					
-			}			
-		}	
-		
-		//определяем первую и последнюю карточки
-		this.recalc_top_bottom_cards();
-		
-		objects.load_notice.visible=false;		
+		//устанавливаем на текущей песне
+		this.set_on_song(this.cur_song_id);
 				
 		objects.songs_cards_cont.y=0;				
 		await anim2.add(objects.songs_cards_cont,{alpha:[0, 1]}, true, 1,'linear',false);
 		
-
 		objects.arrow_icon.y=345;		
 		sound.play('arrow_end');
 		await anim2.add(objects.arrow_icon,{x:[-200, 150]}, true, 1,'easeOutBounce');
@@ -2538,14 +2638,14 @@ play_menu={
 		
 		
 		const inst_name=songs_data[this.cur_song_id].inst;
-		if (inst_name!==''){			
+		/*if (inst_name!==''){			
 			const inst_id=shop_data.findIndex(inst=>inst.name===inst_name);
 			const inst_name_rus=shop_data[inst_id].name_rus;
 			if (my_data.inst.includes(inst_id)===false){
 				message.add('Вам нужен инструмент: '+inst_name_rus);
 				return;
 			}			
-		}		
+		}	*/	
 		
 
 		sound.play('click');
@@ -2556,68 +2656,91 @@ play_menu={
 		
 	up_down(){			
 
-		if(!objects.songs_cards_cont.ready||this.cur_song_id===songs_data.length-1){
+		if(anim2.any_on()||this.cur_song_id===songs_data.length-1){
 			sound.play('locked2');
 			return;				
 		}
 		
 		if(my_data.rating<this.cur_song_id+1){
-			sound.play('locked2');
-			return;				
+			//sound.play('locked2');
+			//return;				
 		}		
 				
 		sound.play('click');
-				
-		const top_song_id=this.top_card.song_id;
-		const abs_bot_y=objects.songs_cards_cont.y+this.bottom_card.y+70;
+							
 		
-		//добавляем сверху если надо
-		if (top_song_id<songs_data.length-1 && abs_bot_y>450){
-			this.bottom_card.y=this.top_card.y-70;
-			this.bottom_card.set(top_song_id+1);	
-		}				
-				
-		anim2.add(objects.songs_cards_cont,{y:[objects.songs_cards_cont.y, objects.songs_cards_cont.y+70]}, true, 0.5,'linear');					
+		//перемещаем последюю карточку вверх и обновляем ее
+		const card_id_to_add=this.top_card.song_id+1;
+		const songs_num=songs_data.length;
+		
+		if (this.bot_card.y===450 && card_id_to_add<songs_num){			
+			this.bot_card.y=this.top_card.y-75;
+			this.bot_card.set(this.top_card.song_id+1)		
+			this.recalc_top_bottom_cards();				
+		}
+			
+		
+		//сдвигаем все
+		for (let card of objects.songs_cards)
+			anim2.add(card,{y:[card.y, card.y+75]}, true, 0.15,'linear');	
+						
 		this.cur_song_id++;
 
-		this.recalc_top_bottom_cards();
 	},
 	
 	down_down(){	
 		
 
-		if(this.cur_song_id===0||!objects.songs_cards_cont.ready){
+		if(anim2.any_on()||!objects.songs_cards_cont.ready||this.cur_song_id===0){
 			sound.play('locked2');
 			return;				
 		}
 
-		
 		sound.play('click');
 		
-		//добавляем снизу если нужно
-		const bot_song_id=this.bottom_card.song_id;
-		const abs_top_y=objects.songs_cards_cont.y+this.top_card.y;
+		//перемещаем последюю карточку вверх и обновляем ее если она есть
+		const card_id_to_add=this.bot_card.song_id-1;
 		
-		if(bot_song_id>0  && abs_top_y<-100) {
-			
-			this.top_card.y=this.bottom_card.y+70;
-			this.top_card.set(bot_song_id-1);
+		if (this.top_card.y===-75 && card_id_to_add>=0){
+			this.top_card.y=this.bot_card.y+75;
+			this.top_card.set(this.bot_card.song_id-1);				
+			this.recalc_top_bottom_cards();			
 		}
 		
-		anim2.add(objects.songs_cards_cont,{y:[objects.songs_cards_cont.y, objects.songs_cards_cont.y-70]}, true, 0.5,'linear');
-		
+		//сдвигаем все
+		for (let card of objects.songs_cards)
+			anim2.add(card,{y:[card.y, card.y-75]}, true, 0.15,'linear');	
+						
 		this.cur_song_id--;
-		this.recalc_top_bottom_cards();
 		
 	},
 	
 	recalc_top_bottom_cards(){
 		
 		this.top_card = objects.songs_cards.reduce((prev, current) => {return prev.y < current.y ? prev : current});
-		this.bottom_card = objects.songs_cards.reduce((prev, current) => {return prev.y > current.y ? prev : current});
+		this.bot_card = objects.songs_cards.reduce((prev, current) => {return prev.y > current.y ? prev : current});
 		objects.songs_cards.forEach(card=>{			
 			card.lock.visible=my_data.rating<card.song_id;
 		})
+	},
+	
+	set_on_song(tar_id){		
+		
+		this.cur_song_id=tar_id;
+		
+		for (let i=0;i<8;i++){
+			
+			const song_id=tar_id+5-i;
+			const top_y=75*(i-1);
+			const free_card=objects.songs_cards[i];
+			free_card.set(song_id);
+			free_card.y=top_y;
+
+			if (i===0) this.top_card=free_card;			
+			if (i===7) this.bot_card=free_card;
+
+		}
+		
 	},
 	
 	back_button_down(){
@@ -2640,11 +2763,7 @@ play_menu={
 			firebase.database().ref('players/'+my_data.uid+'/rating').set(my_data.rating);
 			sound.play('up');
 			this.up_down();			
-		}
-
-		
-
-		
+		}		
 	},
 	
 	inst_down(){		
@@ -2656,6 +2775,36 @@ play_menu={
 		sound.play('click');
 	},
 	
+	async load_avatar(card){		
+		
+		console.log('пытаемся загрузить ',card.artist_eng)
+		if (avatar_loader.loading){
+			await new Promise(resolve => setTimeout(resolve, 250));
+			play_menu.load_avatar(card);
+			return;
+			
+			
+		}
+		
+		const artist_eng=card.artist_eng;
+		
+		//если уже есть
+		if (avatar_loader.resources[artist_eng]){
+			if (card.artist_eng===artist_eng)
+				card.avatar.texture=avatar_loader.resources[artist_eng].texture;	
+			return;
+		}
+		
+		avatar_loader.add(artist_eng,git_src+'artists/'+artist_eng+'.jpg');
+		console.log('загружаем... ',card.artist_eng)
+		await new Promise(resolve=> avatar_loader.load(resolve))
+		console.log('готово!',card.artist_eng)
+		//если карточка все еще ждет того-же артиста
+		if (card.artist_eng===artist_eng)
+			card.avatar.texture=avatar_loader.resources[artist_eng].texture;			
+		
+	},
+		
 	close(){
 		
 		objects.inst_cont.visible=false;
@@ -2665,6 +2814,7 @@ play_menu={
 		objects.up_button.visible=false;
 		objects.down_button.visible=false;
 		objects.back_button.visible=false;
+
 	}
 }
 
@@ -2728,10 +2878,8 @@ async function init_game_env(lang) {
 	
 	await load_resources();
 	audio_context = new (window.AudioContext || window.webkitAudioContext)();	
-
-	
-	//создаем приложение пикси и добавляем тень
-	
+		
+	//создаем приложение пикси и добавляем тень	
 	app.stage = new PIXI.Container();
 	app.renderer = new PIXI.Renderer({width:M_WIDTH, height:M_HEIGHT,antialias:true});
 	document.body.appendChild(app.renderer.view).style["boxShadow"] = "0 0 15px #000000";
@@ -2851,6 +2999,7 @@ async function init_game_env(lang) {
 	my_data.rating = (other_data && other_data.rating) || 0;
 	my_data.money=(other_data && other_data.money) || 0;
 	my_data.inst=(other_data && other_data.inst) || [0];
+	//my_data.inst=[0,1,2,3,4,5];
 	play_menu.cur_song_id=my_data.rating;
 
 	//убираем лупу
@@ -2881,7 +3030,6 @@ async function init_game_env(lang) {
 	//ждем и убираем попап
 	await new Promise((resolve, reject) => setTimeout(resolve, 1000));
 	anim2.add(objects.id_cont,{y:[objects.id_cont.y,-180]}, false, 0.6,'easeInBack');	
-	
 	
 	
 	//показыаем основное меню
