@@ -1291,7 +1291,7 @@ game={
 	
 	async activate() {		
 	
-		await ad.check_and_show();
+		//await ad.check_and_show();
 		//play_menu.cur_song_id=43;		
 		objects.load_notice.visible=true;
 		const midi_file_id=songs_data[play_menu.cur_song_id].file_name;
