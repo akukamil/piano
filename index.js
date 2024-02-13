@@ -25,6 +25,12 @@ shop_data=[{name:'acoustic_grand_piano',price:0,name_rus:'Акустически
 				{name:'life2',price:300,name_rus:'Еще 2 жизни (на одну игру)',type:'life_bonus'},
 				{name:'life4',price:500,name_rus:'Еще 4 жизни (на одну игру)',type:'life_bonus'}];
 
+fbs_once=async function(path){
+	const info=await fbs.ref(path).once('value');
+	return info.val();	
+}
+
+
 const load_queue=[];
 
 class song_card_class extends PIXI.Container{
@@ -2684,9 +2690,13 @@ play_menu={
 		}			
 		
 		//сдвигаем все
-		for (let card of objects.songs_cards)
-			anim2.add(card,{y:[card.y, card.y+75]}, true, 0.15,'linear');	
-						
+		for (let card of objects.songs_cards){
+			if(card.visible)
+				anim2.add(card,{y:[card.y, card.y+75]}, true, 0.15,'linear');		
+			else
+				card.y=card.y+75;
+		}
+					
 		this.cur_song_id++;
 
 	},
@@ -2711,8 +2721,13 @@ play_menu={
 		}
 		
 		//сдвигаем все
-		for (let card of objects.songs_cards)
-			anim2.add(card,{y:[card.y, card.y-75]}, true, 0.15,'linear');	
+		for (let card of objects.songs_cards){
+			if(card.visible)
+				anim2.add(card,{y:[card.y, card.y-75]}, true, 0.15,'linear');		
+			else
+				card.y=card.y-75;
+		}
+
 						
 		this.cur_song_id--;
 		
