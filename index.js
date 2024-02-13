@@ -2658,14 +2658,14 @@ play_menu={
 		
 	},
 		
-	up_down(){			
+	up_down(shift){			
 
-		if(anim2.any_on()||this.cur_song_id===songs_data.length-1){
+		if((anim2.any_on()&&!shift)||this.cur_song_id===songs_data.length-1){
 			sound.play('locked2');
 			return;				
 		}
 		
-		if(my_data.rating<this.cur_song_id+1){
+		if(this.cur_song_id+1>my_data.rating){
 			sound.play('locked2');
 			return;				
 		}		
@@ -2767,16 +2767,15 @@ play_menu={
 		
 	shift_up(){
 		
-		if(my_data.rating===this.cur_song_id){
-			
+		if(my_data.rating===this.cur_song_id){			
 			my_data.rating=this.cur_song_id+1;	
 			firebase.database().ref('players/'+my_data.uid+'/rating').set(my_data.rating);
 			sound.play('up');
-			this.up_down();			
-		}		
+			this.up_down(1);
+		}
 	},
 	
-	inst_down(){		
+	inst_down(){
 		
 		objects.inst_frame.x=this.x;
 		objects.inst_frame.y=this.y;
@@ -2785,7 +2784,7 @@ play_menu={
 		sound.play('click');
 	},
 	
-	async load_avatar(card){		
+	async load_avatar(card){
 		
 		console.log('пытаемся загрузить ',card.artist_eng)
 		if (avatar_loader.loading){
@@ -3009,7 +3008,7 @@ async function init_game_env(lang) {
 	my_data.rating = (other_data && other_data.rating) || 0;
 	my_data.money=(other_data && other_data.money) || 0;
 	my_data.inst=(other_data && other_data.inst) || [0];
-	my_data.rating=0;
+	//my_data.rating=0;
 	play_menu.cur_song_id=my_data.rating;
 
 	//убираем лупу
