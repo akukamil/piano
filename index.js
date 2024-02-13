@@ -86,6 +86,13 @@ class song_card_class extends PIXI.Container{
 	}
 	
 	async set(song_id){
+		
+		
+		
+		if (song_id<0||song_id>=songs_data.length){			
+			this.visible=false;
+			return;
+		}
 			
 		const song_data=songs_data[song_id];
 		this.song_id=song_id;
@@ -1357,7 +1364,6 @@ game={
 		
 		//считаем сколько нот в песне
 		this.notes_in_song=this.main_notes.length+5;
-		objects.taps_left.text=game.notes_in_song;
 		
 		//считаем количество нот
 		const unique_notes_arr=Object.keys(this.unique_notes);
@@ -1629,8 +1635,6 @@ game={
 			this.decrease_life();
 		}
 				
-		//game.notes_in_song--;
-		objects.taps_left.text=game.notes_in_song;
 		
 		if(game.notes_in_song===0) game.stop();		
 		
@@ -2662,8 +2666,8 @@ play_menu={
 		}
 		
 		if(my_data.rating<this.cur_song_id+1){
-			//sound.play('locked2');
-			//return;				
+			sound.play('locked2');
+			return;				
 		}		
 				
 		sound.play('click');
@@ -2677,8 +2681,7 @@ play_menu={
 			this.bot_card.y=this.top_card.y-75;
 			this.bot_card.set(this.top_card.song_id+1)		
 			this.recalc_top_bottom_cards();				
-		}
-			
+		}			
 		
 		//сдвигаем все
 		for (let card of objects.songs_cards)
@@ -2717,8 +2720,14 @@ play_menu={
 	
 	recalc_top_bottom_cards(){
 		
-		this.top_card = objects.songs_cards.reduce((prev, current) => {return prev.y < current.y ? prev : current});
-		this.bot_card = objects.songs_cards.reduce((prev, current) => {return prev.y > current.y ? prev : current});
+		this.top_card = {y:99999};
+		this.bot_card = {y:-99999};
+		
+		for (let card of objects.songs_cards){	
+			if (card.y>this.bot_card.y) this.bot_card=card;			
+			if (card.y<this.top_card.y) this.top_card=card;				
+		}		
+		
 		objects.songs_cards.forEach(card=>{			
 			card.lock.visible=my_data.rating<card.song_id;
 		})
@@ -2728,16 +2737,17 @@ play_menu={
 		
 		this.cur_song_id=tar_id;
 		
+		//сверху вниз добавляем карточки
 		for (let i=0;i<8;i++){
 			
 			const song_id=tar_id+5-i;
+				
 			const top_y=75*(i-1);
 			const free_card=objects.songs_cards[i];
 			free_card.set(song_id);
 			free_card.y=top_y;
 
-			if (i===0) this.top_card=free_card;			
-			if (i===7) this.bot_card=free_card;
+			this.recalc_top_bottom_cards();	
 
 		}
 		
@@ -2999,7 +3009,7 @@ async function init_game_env(lang) {
 	my_data.rating = (other_data && other_data.rating) || 0;
 	my_data.money=(other_data && other_data.money) || 0;
 	my_data.inst=(other_data && other_data.inst) || [0];
-	//my_data.inst=[0,1,2,3,4,5];
+	my_data.rating=0;
 	play_menu.cur_song_id=my_data.rating;
 
 	//убираем лупу
