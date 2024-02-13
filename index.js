@@ -1321,12 +1321,12 @@ game={
 		
 		//жизни
 		this.life=5;
-		if(play_menu.cur_song_id>5) this.life=4;
-		if(play_menu.cur_song_id>10) this.life=3;
-		if(play_menu.cur_song_id>15) this.life=2;
-		if(play_menu.cur_song_id>20) this.life=1;
+		if(play_menu.cur_song_id>10) this.life=4;
+		if(play_menu.cur_song_id>20) this.life=3;
+		if(play_menu.cur_song_id>30) this.life=2;
+		if(play_menu.cur_song_id>40) this.life=1;
 		
-		this.life=5;
+		//this.life=5;
 		
 		//бонусы жизни
 		if (shop.life_bonus==='life2') this.life+=2;
