@@ -1280,6 +1280,7 @@ game={
 	piano_key_start_x:0,
 	active_keys_num:0,
 	unique_notes:{},
+	done_notes_num:0,
 	falling_note_tex:0,
 	render_texture:null,
 	
@@ -1323,6 +1324,7 @@ game={
 		
 		this.unique_notes={};
 		let all_unique_notes={};
+		this.done_notes_num=0;
 		
 		
 		//жизни
@@ -1369,7 +1371,7 @@ game={
 		for(let note of this.all_notes) all_unique_notes[note.midi]=note.midi;		
 		
 		//считаем сколько нот в песне
-		this.notes_in_song=this.main_notes.length+5;
+		this.notes_in_song=this.main_notes.length;
 		
 		//считаем количество нот
 		const unique_notes_arr=Object.keys(this.unique_notes);
@@ -1483,6 +1485,10 @@ game={
 		anim2.add(objects.piano_keys_cont,{y:[600, 0]}, true, 0.5,'easeOutCubic');
 		objects.falling_notes_cont.visible=true;
 		anim2.add(objects.close_button,{y:[-200, objects.close_button.sy]}, true, 0.5,'easeOutCubic');
+		
+		//прогресс песни
+		anim2.add(objects.progress_cont,{y:[-100, objects.progress_cont.sy]}, true, 0.5,'easeOutCubic');
+		objects.progress_bar.width=0;
 				
 		//показываем инструкцию для новичков
 		if(my_data.rating===0) await dialog.show('rules');
@@ -1530,6 +1536,13 @@ game={
 		sound.play('click');
 		this.close();
 		play_menu.activate();
+		
+	},
+	
+	update_progress(){
+		
+		this.done_notes_num++;
+		objects.progress_bar.width=objects.progress_bar.base_width*this.done_notes_num/this.notes_in_song;
 		
 	},
 	
@@ -1634,6 +1647,7 @@ game={
 			game.add_sparks(key,close_notes[min_note_ind]);
 			fnote.catched=key;
 			play_menu.money_in_sack++;
+			this.update_progress();
 			fnote.texture=gres.falling_note_ok_img.texture;			
 			anim2.add(fnote,{scale_xy:[fnote.scale_xy, fnote.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
 			
@@ -1641,8 +1655,6 @@ game={
 			this.decrease_life();
 		}
 				
-		
-		if(game.notes_in_song===0) game.stop();		
 		
 	},
 	
@@ -1677,6 +1689,7 @@ game={
 		objects.falling_notes_cont.visible=false;
 		objects.hearts_cont.visible=false;
 		objects.close_button.visible=false;
+		anim2.add(objects.progress_cont,{y:[objects.progress_cont.yб-100]}, false, 0.5,'easeInBack');
 		this.on=false;
 	},
 	
@@ -1782,7 +1795,7 @@ game={
 					game.decrease_life();
 					sprite_note.texture=gres.falling_note_no_img.texture;	
 					anim2.add(sprite_note,{scale_xy:[sprite_note.scale_xy, sprite_note.scale_xy*2],alpha:[1,0]},false,2,'linear',false);
-
+					this.update_progress();
 				}
 
 				sprite_note.y=pos_y;
