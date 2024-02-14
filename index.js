@@ -1,5 +1,5 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app ={stage:{},renderer:{}},fbs, game_res, objects={}, game_tick=0,audio_context, my_turn=false, room_name = '', LANG = 0, git_src;
+var app ={stage:{},renderer:{}},fbs, game_res, objects={}, game_tick=0,audio_context, my_turn=false, room_name = '', LANG = 0, git_src="https://akukamil.github.io/piano/";
 var any_dialog_active=0, some_process = {}, game_platform='';
 var my_data={opp_id : ''},opp_data={};
 var avatar_loader;
