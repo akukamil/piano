@@ -1362,8 +1362,8 @@ game={
 		//определяем уникальные ноты чтобы только их загрузить (они загрузятся в объект по возрастанию)
 		this.main_notes=midi.tracks.find(t => t.name==='Electric Piano').notes;
 		this.bass_notes=midi.tracks.find(t => t.name==='Grand Piano')?.notes||[];
-		this.main_notes.forEach(n=>n.track='Electric Piano');
-		this.bass_notes.forEach(n=>n.track='Grand Piano');
+		//this.main_notes.forEach(n=>n.track='Electric Piano');
+		//this.bass_notes.forEach(n=>n.track='Grand Piano');
 		
 		this.all_notes=[...this.main_notes,...this.bass_notes];
 		for(let note of this.all_notes) note.played=false;
@@ -1832,13 +1832,11 @@ async function stat_all_songs(){
 	
 	
 	for (let song of songs_data){
-		console.log(song);
-		const midi = await Midi.fromUrl(git_src+'/new_midi/'+song.file_name+'.mid');
+		//console.log(song);
+		const midi = await Midi.fromUrl('/new_midi/'+song.file_name+'.mid');
 		
-		let main_notes=midi.tracks.filter(t => t.name==='MAIN')[0].notes;
-		let bass_notes=midi.tracks.filter(t => t.name==='BASS')[0].notes;
-		main_notes.forEach(n=>n.track='MAIN');
-		bass_notes.forEach(n=>n.track='BASS');
+		this.main_notes=midi.tracks.find(t => t.name==='Electric Piano').notes;
+		this.bass_notes=midi.tracks.find(t => t.name==='Grand Piano')?.notes||[];
 		
 		let unique_notes={};
 		
@@ -1847,7 +1845,7 @@ async function stat_all_songs(){
 		const unique_notes_arr=Object.keys(unique_notes);
 		const unique_notes_num=unique_notes_arr.length;	
 		
-		console.log(unique_notes_num);
+		console.log(song.song_rus,'уникальные ноты: ',unique_notes_num,' всего нот: ',main_notes.length);
 		
 	}
 	
@@ -2204,14 +2202,14 @@ auth2 = {
 			
 			my_data.uid = _player.getUniqueID().replace(/[\/+=]/g, '');
 			my_data.name = _player.getName();
-			my_data.pic_url = _player.getPhoto('medium');
+			my_data.orig_pic_url = _player.getPhoto('medium');
 			
 			if (my_data.pic_url === 'https://games-sdk.yandex.ru/games/api/sdk/v1/player/avatar/0/islands-retina-medium')
-				my_data.pic_url = 'https://avatars.dicebear.com/api/adventurer/' + my_data.uid + '.svg';
+				my_data.pic_url = 'mavatar'+my_data.uid;	
 			
 			if (my_data.name === '')
 				my_data.name = this.get_random_name(my_data.uid);
-						
+				
 			return;
 		}
 		
@@ -2239,7 +2237,7 @@ auth2 = {
 
 			my_data.uid = this.search_in_local_storage() || this.get_random_uid_for_local('GP_');
 			my_data.name = this.get_random_name(my_data.uid) ;
-			my_data.pic_url = 'https://avatars.dicebear.com/api/adventurer/' + my_data.uid + '.svg';	
+			my_data.pic_url = 'mavatar'+my_data.uid;	
 			return;
 		}
 		
@@ -2307,7 +2305,7 @@ async function load_resources() {
 	document.getElementById("m_progress").style.display = 'flex';
 
 	git_src="https://akukamil.github.io/piano/"
-	//git_src=""
+	git_src=""
 
 	//подпапка с ресурсами
 	let lang_pack = ['RUS','ENG'][0];
@@ -2814,7 +2812,7 @@ play_menu={
 	
 	async load_avatar(card){
 		
-		console.log('пытаемся загрузить ',card.artist_eng)
+		//console.log('пытаемся загрузить ',card.artist_eng)
 		if (avatar_loader.loading){
 			await new Promise(resolve => setTimeout(resolve, 250));
 			play_menu.load_avatar(card);
@@ -2833,9 +2831,9 @@ play_menu={
 		}
 		
 		avatar_loader.add(artist_eng,git_src+'artists/'+artist_eng+'.jpg');
-		console.log('загружаем... ',card.artist_eng)
+		//console.log('загружаем... ',card.artist_eng)
 		await new Promise(resolve=> avatar_loader.load(resolve))
-		console.log('готово!',card.artist_eng)
+		//console.log('готово!',card.artist_eng)
 		//если карточка все еще ждет того-же артиста
 		if (card.artist_eng===artist_eng)
 			card.avatar.texture=avatar_loader.resources[artist_eng].texture;			
