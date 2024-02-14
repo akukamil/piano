@@ -1,5 +1,5 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app ={stage:{},renderer:{}},fbs, game_res, objects={}, game_tick=0,audio_context, my_turn=false, room_name = '', LANG = 0, git_src="https://akukamil.github.io/piano/";
+var app ={stage:{},renderer:{}},fbs, game_res, objects={}, game_tick=0,audio_context, my_turn=false, room_name = '', LANG = 0, git_src="";
 var any_dialog_active=0, some_process = {}, game_platform='';
 var my_data={opp_id : ''},opp_data={};
 var avatar_loader;
@@ -2305,7 +2305,7 @@ async function load_resources() {
 	document.getElementById("m_progress").style.display = 'flex';
 
 	git_src="https://akukamil.github.io/piano/"
-	git_src=""
+	//git_src=""
 
 	//подпапка с ресурсами
 	let lang_pack = ['RUS','ENG'][0];
