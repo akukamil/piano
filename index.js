@@ -2202,7 +2202,7 @@ auth2 = {
 			
 			my_data.uid = _player.getUniqueID().replace(/[\/+=]/g, '');
 			my_data.name = _player.getName();
-			my_data.orig_pic_url = _player.getPhoto('medium');
+			my_data.pic_url = _player.getPhoto('medium');
 			
 			if (my_data.pic_url === 'https://games-sdk.yandex.ru/games/api/sdk/v1/player/avatar/0/islands-retina-medium')
 				my_data.pic_url = 'mavatar'+my_data.uid;	
