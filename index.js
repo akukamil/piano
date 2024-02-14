@@ -1956,6 +1956,18 @@ players_cache={
 	
 	players:{},
 	
+	async load_pic(uid,pic_url){
+		
+		//если это мультиаватар
+		if(pic_url.includes('mavatar'))
+			return PIXI.Texture.from(multiavatar(pic_url));
+		
+		const loader=new PIXI.Loader;
+		loader.add(uid, pic_url,{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 5000});	
+		await new Promise(resolve=> loader.load(resolve))		
+		return loader.resources[uid].texture;
+	},
+	
 	async update(uid,params={}){
 				
 		//если игрока нет в кэше то создаем его
@@ -1984,12 +1996,13 @@ players_cache={
 		
 		if(player.pic_url==='https://vk.com/images/camera_100.png')
 			player.pic_url='https://akukamil.github.io/domino/vk_icon.png';
-		
+				
 		//загружаем и записываем текстуру
-		if (player.pic_url) player.texture=PIXI.Texture.from(player.pic_url);	
+		if (player.pic_url) player.texture=await this.load_pic(uid, player.pic_url);	
 		
 	}	
 }
+
 
 lb={
 
@@ -2244,7 +2257,7 @@ auth2 = {
 		if (game_platform === 'DEBUG') {		
 
 			my_data.name = my_data.uid = 'debug' + prompt('Отладка. Введите ID', 100);
-			my_data.pic_url = 'https://avatars.dicebear.com/api/adventurer/' + my_data.uid + '.svg';		
+			my_data.pic_url = 'mavatar'+my_data.uid;	
 			return;
 		}
 		
@@ -3024,10 +3037,7 @@ async function init_game_env(lang) {
 		objects.id_loup.y=20*Math.cos(game_tick*8)+150;
 	}
 	
-	//ждем пока загрузится аватар
-	const loader=new PIXI.Loader();
-	loader.add("my_avatar", my_data.pic_url,{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 5000});			
-	await new Promise((resolve, reject)=> loader.load(resolve))	
+
 	
 			
 	//получаем остальные данные об игроке
@@ -3038,12 +3048,19 @@ async function init_game_env(lang) {
 	my_data.rating = (other_data && other_data.rating) || 0;
 	my_data.money=(other_data && other_data.money) || 0;
 	my_data.inst=(other_data && other_data.inst) || [0];
-	//my_data.rating=0;
 	play_menu.cur_song_id=my_data.rating;
 
 	//убираем лупу
 	objects.id_loup.visible=false;
+	
+	//загружаем мои данные в кэш
+	await players_cache.update(my_data.uid,{pic_url:my_data.pic_url,name:my_data.name,rating:my_data.rating});
+	await players_cache.update_avatar(my_data.uid);
 
+
+	objects.id_avatar.texture=players_cache.players[my_data.uid].texture;
+	
+	
 	//устанавлием имена
 	make_text(objects.id_name,my_data.name,150);
 	
