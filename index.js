@@ -1895,8 +1895,13 @@ ad={
 		}
 		
 		if (game_platform==="VK") {
-					 
-			await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})
+			
+			try(){
+				await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})				
+			}catch(err){
+				console.log(err);
+			}	
+
 
 		}		
 
