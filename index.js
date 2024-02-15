@@ -2008,7 +2008,6 @@ players_cache={
 	}	
 }
 
-
 lb={
 
 	cards_pos: [[370,10],[380,70],[390,130],[380,190],[360,250],[330,310],[290,370]],
@@ -2608,7 +2607,7 @@ play_menu={
 		if(res==='none')
 			await ad.check_and_show();
 		
-		this.cur_song_id=my_data.rating;
+		//this.cur_song_id=my_data.rating;
 		
 		if(!avatar_loader) avatar_loader=new PIXI.Loader();
 				
