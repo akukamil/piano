@@ -1896,7 +1896,7 @@ ad={
 		
 		if (game_platform==="VK") {
 			
-			try(){
+			try{
 				await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})				
 			}catch(err){
 				console.log(err);
