@@ -1317,6 +1317,15 @@ game={
 		await new Promise(resolve=> game_res.load(resolve))
 		
 		
+		const design_tint={0:0xffffff,1:0xffffff,2:0xffffff,3:0xffffff,4:0xffffff,5:0xffffff,6:0xffffff,7:0xffffff,8:0x222255};
+		
+		
+		objects.piano_keys.forEach(k=>k.tint=design_tint[design_id])
+		objects.piano_top.tint=design_tint[design_id]
+		objects.progress_bar.tint=design_tint[design_id]
+		objects.progress_frame.tint=design_tint[design_id]
+		
+		
 		this.falling_note_tex=gres[`falling_note${design_id}`].texture;
 		objects.desktop.texture=gres[`bcg${design_id}`].texture;
 		objects.piano_bcg.texture=gres[`piano${design_id}`].texture;
@@ -2608,6 +2617,7 @@ play_menu={
 			await ad.check_and_show();
 		
 		//this.cur_song_id=my_data.rating;
+		objects.desktop.texture=gres.desktop.texture;
 		
 		if(!avatar_loader) avatar_loader=new PIXI.Loader();
 				
