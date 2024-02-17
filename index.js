@@ -1350,7 +1350,7 @@ game={
 		if (shop.life_bonus==='life4') this.life+=4;
 		if (this.life>10) this.life=10;
 		
-		objects.hearts_cont.x=400-0.5*this.life*40
+		objects.hearts_cont.x=200;
 		
 		//бонусы замедления
 		if (shop.slow_bonus==='slow5') speed=speed-speed*0.05;
