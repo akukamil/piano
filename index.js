@@ -1337,18 +1337,20 @@ game={
 		
 		
 		//жизни
-		this.life=5;
-		if(play_menu.cur_song_id>10) this.life=4;
-		if(play_menu.cur_song_id>20) this.life=3;
-		if(play_menu.cur_song_id>30) this.life=2;
-		if(play_menu.cur_song_id>40) this.life=1;
+		this.life=10;
+		if(play_menu.cur_song_id>10) this.life=8;
+		if(play_menu.cur_song_id>20) this.life=6;
+		if(play_menu.cur_song_id>30) this.life=4;
+		if(play_menu.cur_song_id>40) this.life=2;
 		
 		//this.life=5;
 		
 		//бонусы жизни
 		if (shop.life_bonus==='life2') this.life+=2;
 		if (shop.life_bonus==='life4') this.life+=4;
-		if (this.life>5) this.life=5;		
+		if (this.life>10) this.life=10;
+		
+		objects.hearts_cont.x=400-0.5*this.life*40
 		
 		//бонусы замедления
 		if (shop.slow_bonus==='slow5') speed=speed-speed*0.05;
