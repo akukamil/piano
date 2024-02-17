@@ -1362,7 +1362,7 @@ game={
 		objects.bonuses.visible=true;
 		objects.bonuses.text=shop.life_bonus + ' ' +shop.slow_bonus
 		
-		for (let i=0;i<5;i++){
+		for (let i=0;i<10;i++){
 			if (i<this.life)
 				objects.hearts[i].texture=gres.heart_img.texture;
 			else
